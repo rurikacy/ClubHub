@@ -1,0 +1,345 @@
+@{
+    Layout = null;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>社团公告管理</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        通知标题：
+        <div class="layui-inline">
+            <input class="layui-input" name="messageTitle" id="messageTitle" autocomplete="off" placeholder="请输入通知标题">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">发布公告</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="messageList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+</script>
+
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" style="padding:10px" lay-filter="addFormFilter">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">社团 ID</label>
+            <div class="layui-input-block">
+                <input type="number" name="ClubId" id="box_clubId" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入社团 ID">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">发布人 ID</label>
+            <div class="layui-input-block">
+                <input type="number" name="AdminId" id="box_adminId" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入管理员 ID">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">通知标题</label>
+            <div class="layui-input-block">
+                <input type="text" name="Title" id="box_title" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入通知标题">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">通知内容</label>
+            <div class="layui-input-block">
+                <textarea name="Content" id="box_content" lay-verify="required" placeholder="请输入通知内容" class="layui-textarea" style="min-height: 100px;"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="submitForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form'], function () {
+        var $ = layui.$;
+        var currentClubId = '@ViewBag.CurrentClubId';
+        var currentUserId = '@ViewBag.CurrentUserId';
+        var table = layui.table;
+        var form = layui.form;
+
+        function initIndex() {
+            table.render({
+                id: 'List',
+                elem: '#messageList',
+                url: '/ClubHub/Message/GetAll',
+                cols: [[
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                    {field: 'title', title: '通知标题', width: 200, align: 'center'},
+                    {field: 'content', title: '通知内容', width: 400, align: 'center'},
+                    {field: 'clubName', title: '发布社团', width: 150, align: 'center'},
+                    {field: 'adminName', title: '发布人', width: 150, align: 'center'},
+                    {
+                        field: 'enterData', title: '发布时间', width: 200, align: 'center', templet: function (res) {
+                            return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                        }
+                    },
+                    {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 200, align: 'center'}
+                ]],
+                done: function () {
+                    $("[data-field='id']").css('display', 'none');
+                },
+                page: true
+            });
+        }
+
+        initIndex();
+
+        function initForm(formObj, dataObj) {
+            // Auto-fill and hide for Club Admin / User
+            if (currentClubId) {
+                $("#box_clubId").closest(".layui-form-item").hide();
+            }
+            if (currentUserId) {
+                $("#box_adminId").closest(".layui-form-item").hide();
+            }
+
+            if (!!dataObj) {
+                $("#box_id").val(dataObj.id);
+                $("#box_clubId").val(dataObj.clubId);
+                $("#box_adminId").val(dataObj.adminId);
+                $("#box_title").val(dataObj.title);
+                $("#box_content").val(dataObj.content);
+            } else {
+                // Add mode: set values
+                if (currentClubId) $("#box_clubId").val(currentClubId);
+                if (currentUserId) $("#box_adminId").val(currentUserId);
+            }
+
+            form.render();
+        }
+
+        var active = {
+            reload: function () {
+                table.reload('List', {
+                    page: {curr: 1},
+                    where: {Title: $('#messageTitle').val()}
+                }, 'data');
+            },
+            add: function () {
+                var str = $('#add_box').html();
+                var addForm = layer.open({
+                    title: "添加通知",
+                    type: 1,
+                    area: ['600px', '500px'],
+                    content: str,
+                    resize: true,
+                    scrollbar: false,
+                    fixed: false,
+                    btn: ['确定', '取消'],
+                    btnAlign: 'c',
+                    yes: function (index, layero) {
+                        // 触发表单提交
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index, obj) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        // 修改确定按钮样式为暗红底白字
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        // 绑定表单提交事件
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            var title = $('#box_title').val();
+                            var content = $('#box_content').val();
+                            
+                            if (!title) {
+                                layer.msg("通知标题不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!content) {
+                                layer.msg("通知内容不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            var url = '/ClubHub/Message/Create';
+                            var id = $('#box_id').val();
+                            if (id && id != '0' && id != '') {
+                                url = '/ClubHub/Message/Edit';
+                            }
+                            
+                            var postData = {
+                                Id: parseInt(id) || 0,
+                                ClubId: parseInt($('#box_clubId').val()) || (currentClubId ? parseInt(currentClubId) : 0),
+                                AdminId: parseInt($('#box_adminId').val()) || (currentUserId ? parseInt(currentUserId) : 0),
+                                Title: title,
+                                Content: content
+                            };
+                            
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List', {page: {curr: 1}}, 'data');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                },
+                                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    var errorMsg = "请求失败";
+                                    if (XMLHttpRequest.responseText) {
+                                        try {
+                                            var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                            errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                        } catch (e) {
+                                        }
+                                    }
+                                    layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initForm(addForm);
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除这条通知吗？', function (index) {
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Message/Delete',
+                        data: {id: data.id},
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(index);
+                                table.reload('List', {page: {curr: 1}}, 'data');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                            }
+                        },
+                        error: function () {
+                            layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                });
+            }
+            if (obj.event === 'edit') {
+                var str = $('#add_box').html();
+                var editForm = layer.open({
+                    title: "编辑通知",
+                    type: 1,
+                    area: ['600px', '500px'],
+                    content: str,
+                    resize: true,
+                    scrollbar: false,
+                    fixed: false,
+                    btn: ['确定', '取消'],
+                    btnAlign: 'c',
+                    yes: function (index, layero) {
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index, obj) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            var title = $('#box_title').val();
+                            var content = $('#box_content').val();
+                            
+                            if (!title) {
+                                layer.msg("通知标题不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!content) {
+                                layer.msg("通知内容不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            var postData = {
+                                Id: parseInt($('#box_id').val()) || 0,
+                                ClubId: parseInt($('#box_clubId').val()) || 0,
+                                AdminId: parseInt($('#box_adminId').val()) || 0,
+                                Title: title,
+                                Content: content
+                            };
+                            
+                            $.ajax({
+                                type: "POST",
+                                url: '/ClubHub/Message/Edit',
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List', {page: {curr: 1}}, 'data');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                },
+                                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    var errorMsg = "请求失败";
+                                    if (XMLHttpRequest.responseText) {
+                                        try {
+                                            var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                            errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                        } catch (e) {
+                                        }
+                                    }
+                                    layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initForm(editForm, data);
+            }
+        });
+    });
+</script>
+

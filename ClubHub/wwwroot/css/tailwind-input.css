@@ -1,0 +1,398 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   ClubHub Modern UI with Tailwind CSS
+   ============================================ */
+
+@layer base {
+  /* 基础样式重置 */
+  html {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply font-sans text-gray-700 bg-gray-50;
+  }
+}
+
+@layer components {
+  /* ============================================
+     Button Components
+     ============================================ */
+  
+  /* 主要按钮样式 */
+  .layui-btn {
+    @apply inline-flex items-center justify-center px-5 py-2.5 
+           bg-primary text-white font-medium 
+           rounded-md shadow-sm 
+           transition-all duration-200 ease-in-out
+           hover:bg-primary-hover hover:shadow-primary hover:-translate-y-0.5
+           active:translate-y-0 active:shadow-sm
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+  }
+  
+  /* 次要按钮 */
+  .layui-btn.layui-btn-normal {
+    @apply bg-primary-light hover:bg-primary;
+  }
+  
+  /* 危险按钮 */
+  .layui-btn.layui-btn-danger {
+    @apply bg-red-600 hover:bg-red-700;
+  }
+  
+  /* 小按钮 */
+  .layui-btn.layui-btn-xs {
+    @apply px-3 py-1.5 text-xs rounded;
+  }
+  
+  /* 流体按钮 */
+  .layui-btn.layui-btn-fluid {
+    @apply w-full;
+  }
+
+  /* ============================================
+     Form Input Components
+     ============================================ */
+  
+  .layui-input,
+  .layui-textarea {
+    @apply w-full px-4 py-2.5 
+           bg-white border border-gray-200 
+           rounded-md 
+           transition-all duration-150 ease-in-out
+           placeholder:text-gray-400
+           focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10;
+  }
+  
+  .layui-textarea {
+    @apply min-h-[100px] resize-y;
+  }
+  
+  /* 选择框样式 */
+  .layui-form-select .layui-input {
+    @apply rounded-md;
+  }
+  
+  .layui-form-select dl {
+    @apply rounded-md shadow-lg border border-gray-100 mt-1;
+  }
+  
+  .layui-form-select dl dd {
+    @apply transition-colors duration-150;
+  }
+  
+  .layui-form-select dl dd:hover {
+    @apply bg-primary/5;
+  }
+  
+  .layui-form-select dl dd.layui-this {
+    @apply bg-primary text-white;
+  }
+
+  /* ============================================
+     Card Components
+     ============================================ */
+  
+  .layui-card {
+    @apply bg-white rounded-lg shadow 
+           transition-all duration-300 ease-in-out
+           hover:shadow-lg;
+  }
+  
+  .layui-card-header {
+    @apply px-6 py-4 border-b border-gray-100 
+           text-lg font-semibold text-gray-800
+           rounded-t-lg;
+  }
+  
+  .layui-card-body {
+    @apply p-6 rounded-b-lg;
+  }
+
+  /* ============================================
+     Table Components
+     ============================================ */
+  
+  .layui-table-view {
+    @apply rounded-lg overflow-hidden border border-gray-200 shadow-sm;
+  }
+  
+  .layui-table-view .layui-table-header {
+    @apply rounded-t-lg;
+  }
+  
+  .layui-table-view .layui-table-page {
+    @apply rounded-b-lg px-4 py-3;
+  }
+  
+  .layui-table tbody tr {
+    @apply transition-colors duration-150;
+  }
+  
+  .layui-table tbody tr:hover {
+    @apply bg-primary/[0.03];
+  }
+
+  /* ============================================
+     Pagination Components
+     ============================================ */
+  
+  .layui-laypage a,
+  .layui-laypage span {
+    @apply inline-flex items-center justify-center 
+           min-w-[32px] h-8 px-3 mx-0.5
+           rounded 
+           transition-all duration-150 ease-in-out;
+  }
+  
+  .layui-laypage a:hover {
+    @apply bg-primary/10 text-primary border-primary;
+  }
+  
+  .layui-laypage .layui-laypage-curr .layui-laypage-em {
+    @apply rounded bg-primary;
+  }
+
+  /* ============================================
+     Modal/Layer Components
+     ============================================ */
+  
+  .layui-layer {
+    @apply rounded-xl shadow-2xl overflow-hidden;
+  }
+  
+  .layui-layer-title {
+    @apply px-6 py-4 text-lg font-semibold 
+           bg-gray-50 border-b border-gray-100
+           rounded-t-xl;
+  }
+  
+  .layui-layer-content {
+    @apply p-6;
+  }
+  
+  .layui-layer-btn {
+    @apply px-6 py-4 border-t border-gray-100 
+           flex justify-end gap-3
+           rounded-b-xl;
+  }
+  
+  .layui-layer-btn a {
+    @apply inline-flex items-center justify-center 
+           px-5 py-2 rounded-md
+           transition-all duration-200;
+  }
+  
+  .layui-layer-btn .layui-layer-btn0 {
+    @apply bg-primary text-white 
+           hover:bg-primary-hover hover:shadow-primary;
+  }
+  
+  .layui-layer-btn .layui-layer-btn1 {
+    @apply bg-gray-100 text-gray-700 
+           hover:bg-gray-200;
+  }
+
+  /* ============================================
+     Navigation Components
+     ============================================ */
+  
+  /* 头部导航 */
+  .layui-header {
+    @apply shadow-md relative z-50;
+  }
+  
+  .layui-logo {
+    @apply flex items-center px-6 
+           text-lg font-semibold tracking-wide;
+  }
+  
+  .layui-logo span {
+    @apply ml-2 pl-3 border-l-2 border-white/30 
+           font-normal opacity-90;
+  }
+  
+  /* 侧边栏导航 */
+  .layui-nav-tree .layui-nav-item {
+    @apply mx-2 my-0.5 rounded 
+           transition-colors duration-200;
+  }
+  
+  .layui-nav-tree .layui-nav-item > a {
+    @apply rounded transition-all duration-200;
+  }
+  
+  .layui-nav-tree .layui-nav-item:hover > a {
+    @apply bg-primary/10;
+  }
+  
+  .layui-nav-tree .layui-nav-child dd {
+    @apply mx-2 my-0.5 rounded 
+           transition-colors duration-200;
+  }
+  
+  .layui-nav-tree .layui-nav-child dd a {
+    @apply rounded block transition-all duration-200;
+  }
+  
+  .layui-nav-tree .layui-nav-child dd:hover a {
+    @apply bg-primary/[0.15];
+  }
+  
+  .layui-nav-tree .layui-nav-item.layui-this > a,
+  .layui-nav-tree .layui-nav-child dd.layui-this a {
+    @apply bg-primary text-white rounded;
+  }
+  
+  /* 头部下拉菜单 */
+  .layui-header .layui-nav-child {
+    @apply rounded-lg shadow-lg border border-gray-100 overflow-hidden;
+  }
+  
+  .layui-nav-child dd {
+    @apply transition-colors duration-150;
+  }
+  
+  .layui-nav-child dd:hover {
+    @apply bg-primary/5;
+  }
+  
+  .layui-nav-child dd:hover a {
+    @apply text-primary;
+  }
+  
+  /* 用户头像 */
+  .layui-nav-img {
+    @apply rounded-full transition-all duration-200
+           hover:scale-105 hover:shadow-md;
+  }
+
+  /* ============================================
+     Breadcrumb Components
+     ============================================ */
+  
+  .layadmin-header {
+    @apply bg-white rounded-lg shadow-sm 
+           border border-gray-100 
+           mx-4 my-3;
+  }
+  
+  .layadmin-header .layui-breadcrumb {
+    @apply px-5 py-3;
+  }
+
+  /* ============================================
+     Login Page Components
+     ============================================ */
+  
+  .layadmin-user-login-main {
+    @apply bg-white rounded-xl shadow-xl p-10 
+           animate-fade-in;
+  }
+  
+  .layadmin-user-login-header {
+    @apply text-center mb-6 animate-slide-up;
+  }
+  
+  .layadmin-user-login-header h2 {
+    @apply text-3xl font-light text-gray-900 mb-2;
+  }
+  
+  .layadmin-user-login-header p {
+    @apply text-gray-400 font-light;
+  }
+  
+  .layadmin-user-login-footer {
+    @apply absolute bottom-5 w-full text-center 
+           text-black/50 animate-fade-in;
+    animation-delay: 0.3s;
+  }
+  
+  .NFU_logo {
+    @apply h-48 mb-6 mx-auto;
+  }
+
+  /* ============================================
+     Utility Classes
+     ============================================ */
+  
+  /* 内容区域 */
+  .layui-body {
+    @apply p-4 bg-gray-50 min-h-screen;
+  }
+  
+  /* 面包屑区域 */
+  .layui-body > .layui-fluid,
+  .layui-body > .layui-card {
+    @apply rounded-lg;
+  }
+  
+  /* 搜索区域 */
+  .demoTable {
+    @apply px-4 py-3 mb-4;
+  }
+  
+  /* 表单标签 */
+  .layui-form-label {
+    @apply font-medium text-gray-700;
+  }
+  
+  /* 单选按钮 */
+  .layui-form-radio > i:hover,
+  .layui-form-radioed > i {
+    @apply text-primary;
+  }
+}
+
+@layer utilities {
+  /* 自定义工具类 */
+  .text-primary {
+    color: rgb(139, 1, 1);
+  }
+  
+  .bg-primary {
+    background-color: rgb(139, 1, 1);
+  }
+  
+  .bg-primary-hover {
+    background-color: rgb(119, 1, 1);
+  }
+  
+  .bg-primary-light {
+    background-color: rgb(211, 77, 77);
+  }
+  
+  .bg-primary-lighter {
+    background-color: rgb(255, 235, 235);
+  }
+  
+  .border-primary {
+    border-color: rgb(139, 1, 1);
+  }
+  
+  .ring-primary {
+    --tw-ring-color: rgb(139, 1, 1);
+  }
+  
+  .shadow-primary {
+    --tw-shadow: 0 4px 14px 0 rgba(139, 1, 1, 0.25);
+    --tw-shadow-colored: 0 4px 14px 0 var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  
+  /* 动画延迟 */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+}

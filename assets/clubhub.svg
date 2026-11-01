@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ClubHub">
+  <rect x="2" y="2" width="124" height="124" rx="32" fill="#fff" stroke="#edf0fa" stroke-width="4"/>
+  <path d="M23 59c0-20 16-34 37-34s37 14 37 34-16 34-37 34c-4 0-8-.5-12-1.5L33 99l3.5-14C28 79 23 70 23 59Z" fill="#7774e8"/>
+  <path d="M76 62c17 0 29 11 29 25 0 6-2.5 12-7 16l2.5 9-11-5a35 35 0 0 1-13.5 2.5c-17 0-29-9.5-29-23S59 62 76 62Z" fill="#a4e3d3" stroke="#fff" stroke-width="4"/>
+  <circle cx="47" cy="56" r="4" fill="#fff"/>
+  <circle cx="72" cy="56" r="4" fill="#fff"/>
+  <path d="M52 67c4 5 12 5 16 0" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="68" cy="86" r="3" fill="#39766f"/>
+  <circle cx="84" cy="86" r="3" fill="#39766f"/>
+  <path d="M72 94c2.5 2.5 5.5 2.5 8 0" fill="none" stroke="#39766f" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="m98 25 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="#ffd077"/>
+</svg>

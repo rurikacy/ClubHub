@@ -1,0 +1,331 @@
+
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>成员管理</cite></a><span lay-separator="">/</span>
+        <a><cite>成员管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        成员用户名/真实姓名：
+        <div class="layui-inline">
+            <input class="layui-input" name="userName" id="userName" autocomplete="off" placeholder="请输入用户名/真实姓名">
+        </div>
+        手机号：
+        <div class="layui-inline">
+            <input class="layui-input" name="phone" id="phone" autocomplete="off" placeholder="请输入手机号">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="studentList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+</script>
+
+@*新增、编辑弹窗*@
+<script type="text/template" id="add_box">
+    <div class="layui-form layui-form-pane" style="padding:10px">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">学号</label>
+            <div class="layui-input-block">
+                <input type="text" name="serialNumber" id="box_serialNumber" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input type="text" name="userName" id="box_userName" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">真实姓名</label>
+            <div class="layui-input-block">
+                <input type="text" name="realName" id="box_realName" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-block">
+                <input type="text" name="phone" id="box_phone" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <select name="sex" id="box_sex" lay-verify="required">
+                    <option value="0">未知</option>
+                    <option value="1">男</option>
+                    <option value="2">女</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">班级</label>
+            <div class="layui-input-block xm-select-demo" id="box_class" name="classId">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script>
+    layui.use(['table', 'form', 'laydate'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+            var laydate = layui.laydate;
+            var xmSelect = layui.xmSelect;
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#studentList',
+                    url: '/ClubHub/Student/List',
+                    title: '用户数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                            {field: 'serialNumber', title: '编号', width: 250, align: 'center'},
+                            {field: 'userName', title: '用户名', width: 250, align: 'center'},
+                            {field: 'realName', title: '真实姓名', width: 250, align: 'center'},
+                            {field: 'phone', title: '手机号', width: 250, align: 'center'},
+                            {
+                                field: 'sex',
+                                title: '性别',
+                                width: 150,
+                                align: 'center',
+                                templet: function (res) {
+                                    return res.sex == 1 ? '男' : res.sex == 2 ? "女" : "未知";
+                                }
+                            },
+
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 260, align: 'center'}
+                        ]
+                    ],
+                    done: function () { // 隐藏id列
+                        $("[data-field='id']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+            //初始化列表页面
+            initIndex();
+
+            //初始化表单页面
+            function initForm(formObj, dataObj) {
+                console.log(dataObj);
+
+                //加载院系、专业、班级
+                $.ajax({
+                    type: "GET",
+                    url: '/ClubHub/Base/DepartmentMajorClass',
+                    data: {studentId: !!dataObj ? dataObj.id : 0},
+                    dataType: "json",
+                    beforeSend: function () {
+                    },
+                    success: function (res) {
+                        if (res.msg) {
+                            //无限级分类-基本配置
+                            var catIns = xmSelect.render({
+                                el: '#box_class',
+                                radio: true,
+                                showstep: true,
+                                clickClose: true,
+                                autoRow: true,
+                                cascader: {
+                                    show: true,
+                                    indent: 30
+                                },
+                                height: '200px',
+                                data() {
+                                    return res.data;
+                                }
+                            });
+                            form.render();
+                        }
+                    },
+                    complete: function () {
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    }
+                });
+
+                //执行一个laydate实例
+                laydate.render({
+                    elem: '#box_enterDate', //指定元素
+
+                });
+
+                if (!!dataObj) {
+                    $("#box_id").val(dataObj.id);
+                    $("#box_serialNumber").val(dataObj.serialNumber);
+                    $("#box_userName").val(dataObj.userName);
+                    $("#box_realName").val(dataObj.realName);
+                    $("#box_phone").val(dataObj.phone);
+                    $("#box_sex").val(dataObj.sex);
+                }
+
+                //表单提交
+                form.on('submit(submitForm)',
+                    function (data) {
+                        var url = '/ClubHub/Student/Add';
+                        if (!!data.field.id) {
+                            url = '/ClubHub/Student/Edit';
+                        }
+                        debugger;
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: data.field,
+                            dataType: "json",
+                            beforeSend: function () {
+                            },
+                            success: function (data) {
+                                if (data.msg) {
+                                    layer.msg(data.message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(formObj);
+                                    initIndex();
+                                } else {
+                                    layer.msg(data.message, {icon: 5, time: 1000, shade: 0.08});
+                                }
+                            },
+                            complete: function () {
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            }
+                        });
+                    });
+                form.render();
+                return false;
+            }
+
+            //页面事件
+            var active = {
+                reload: function () {
+                    var userName = $('#userName');
+                    var phone = $('#phone');
+                    //执行重载
+                    table.reload('List',
+                        {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                UserName: userName.val(),
+                                Phone: phone.val()
+                            }
+                        },
+                        'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加",
+                        type: 1,
+                        area: ['600px', '660px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) { //保存按钮事件
+                            $("#submitForm").click();
+                        },
+                        btn2: function (index, obj) { //窗口关闭按钮事件
+                            layer.close(index);
+                        },
+                        cancel: function (index) { //窗口关闭按钮事件
+                            layer.close(index);
+                        }
+                    });
+
+                    initForm(addForm);
+                }
+            };
+
+            //监听页面工具事件（搜索、新增、刷新等）
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            //监听行工具事件（编辑、删除等）
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    console.log(obj);
+                    if (obj.event === 'del') {
+                        layer.confirm('真的删除行么？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Student/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    beforeSend: function () {
+                                    },
+                                    success: function (data) {
+                                        if (data.msg) {
+                                            layer.msg(data.message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            initIndex();
+                                        } else {
+                                            layer.msg(data.message, {icon: 5, time: 1000, shade: 0.08});
+                                        }
+                                    },
+                                    complete: function () {
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var str = $('#add_box').html();
+                        var editForm = layer.open({
+                            title: "编辑",
+                            type: 1,
+                            area: ['600px', '660px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) { //保存按钮事件
+                                $("#submitForm").click();
+                            },
+                            btn2: function (index, obj) { //窗口关闭按钮事件
+                                layer.close(index);
+                            },
+                            cancel: function (index) { //窗口关闭按钮事件
+                                layer.close(index);
+                            }
+                        });
+
+                        initForm(editForm, data);
+                    }
+                });
+
+        });
+
+</script>

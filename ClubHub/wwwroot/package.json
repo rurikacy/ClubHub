@@ -1,0 +1,14 @@
+{
+  "name": "clubhub-ui",
+  "version": "1.0.0",
+  "description": "ClubHub UI with Tailwind CSS",
+  "scripts": {
+    "build:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --minify",
+    "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33"
+  }
+}

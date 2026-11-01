@@ -1,0 +1,403 @@
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>用户管理</cite></a><span lay-separator="">/</span>
+        <a><cite>管理员信息管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        管理员姓名：
+        <div class="layui-inline">
+            <input class="layui-input" name="adminName" id="adminName" autocomplete="off" placeholder="请输入管理员姓名">
+        </div>
+        管理员类型：
+        <div class="layui-inline">
+            <select name="adminType" id="adminType" class="layui-input" style="width: 150px;">
+                <option value="">全部</option>
+                <option value="0">超级管理员</option>
+                <option value="1">社团管理员</option>
+            </select>
+        </div>
+        所属社团：
+        <div class="layui-inline">
+            <select name="clubIdFilter" id="clubIdFilter" class="layui-input" style="width: 150px;">
+                <option value="">全部社团</option>
+            </select>
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="adminList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    {{# if(d.adminType == 1 && d.memberCount > 0){ }}
+    <a class="layui-btn layui-btn-xs layui-btn-disabled" style="background-color: #ccc; color: white; cursor: not-allowed;" title="该社长对应的社团还有 {{d.memberCount}} 名成员，无法删除">删除</a>
+    {{# } else { }}
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+    {{# } }}
+</script>
+
+@*新增、编辑弹窗*@
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" lay-filter="addFormFilter" style="padding:10px">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">学号</label>
+            <div class="layui-input-block">
+                <input type="text" name="StudentId" id="box_studentId" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入学号">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-block">
+                <input type="text" name="Name" id="box_name" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入姓名">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <input type="radio" name="Sex" value="0" title="未知" checked>
+                <input type="radio" name="Sex" value="1" title="男">
+                <input type="radio" name="Sex" value="2" title="女">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-block">
+                <input type="text" name="PhoneNumber" id="box_phoneNumber" autocomplete="off" class="layui-input" placeholder="请输入手机号">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码</label>
+            <div class="layui-input-block">
+                <input type="text" name="Password" id="box_password" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入密码">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">管理员类型</label>
+            <div class="layui-input-block">
+                <select name="AdminType" id="box_adminType" lay-verify="required" lay-filter="adminTypeChange">
+                    <option value="">请选择管理员类型</option>
+                    <option value="0">超级管理员</option>
+                    <option value="1">社团管理员</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item" id="clubIdFormItem">
+            <label class="layui-form-label">所属社团</label>
+            <div class="layui-input-block">
+                <select name="ClubId" id="box_clubId">
+                    <option value="">请选择社团</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" id="submitForm" lay-submit lay-filter="submitForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#adminList',
+                    url: '/ClubHub/Admin/GetAll',
+                    title: '管理员数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                            {field: 'studentId', title: '学号', width: 150, align: 'center'},
+                            {field: 'name', title: '姓名', width: 150, align: 'center'},
+                            {
+                                field: 'sex', title: '性别', width: 100, align: 'center', templet: function (res) {
+                                    return res.sex == 1 ? '男' : (res.sex == 2 ? '女' : '未知');
+                                }
+                            },
+                            {field: 'phoneNumber', title: '手机号', width: 150, align: 'center'},
+                            {
+                                field: 'adminType',
+                                title: '管理员类型',
+                                width: 150,
+                                align: 'center',
+                                templet: function (res) {
+                                    return res.adminType == 0 ? '<span style="color: #FF5722;">超级管理员</span>' : '<span style="color: #009688;">社长</span>';
+                                }
+                            },
+                            {
+                                field: 'clubName', title: '所属社团', width: 150, align: 'center', templet: function (res) {
+                                    return res.clubName || '-';
+                                }
+                            },
+                            {
+                                field: 'enterData', title: '加入时间', width: 200, align: 'center', templet: function (res) {
+                                    return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                                }
+                            },
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 200, align: 'center'}
+                        ]
+                    ],
+                    done: function () {
+                        $("[data-field='id']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+            initIndex();
+
+            // 加载社团列表用于筛选
+            $.get('/ClubHub/Admin/GetClubList', function (res) {
+                var html = '<option value="">全部社团</option>';
+                if (res && res.length > 0) {
+                    $.each(res, function (i, item) {
+                        html += '<option value="' + item.id + '">' + item.name + '</option>';
+                    });
+                }
+                $("#clubIdFilter").html(html);
+                form.render('select');
+            });
+
+            function initForm(formObj, dataObj) {
+                // 加载社团列表
+                $.get('/ClubHub/Admin/GetClubList', function (res) {
+                    var html = '<option value="">请选择社团</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#box_clubId").html(html);
+
+                    if (!!dataObj) {
+                        // 编辑模式：隐藏学号和密码字段，并移除必填验证
+                        $("#box_studentId").parents(".layui-form-item").hide();
+                        $("#box_studentId").removeAttr("lay-verify");
+                        $("#box_password").parents(".layui-form-item").hide();
+                        $("#box_password").removeAttr("lay-verify");
+
+                        $("#box_id").val(dataObj.id);
+                        $("#box_studentId").val(dataObj.studentId);
+                        $("#box_name").val(dataObj.name);
+                        $("input[name='Sex'][value='" + dataObj.sex + "']").prop("checked", true);
+                        $("#box_phoneNumber").val(dataObj.phoneNumber);
+                        $("#box_adminType").val(dataObj.adminType);
+
+                        if (dataObj.clubId) {
+                            $("#box_clubId").val(dataObj.clubId);
+                            $("#clubIdFormItem").show();
+                        } else {
+                            $("#clubIdFormItem").hide();
+                        }
+                    } else {
+                        // 新增模式：默认隐藏社团选择
+                        $("#clubIdFormItem").hide();
+                    }
+
+                    form.render();
+                });
+
+                // 监听管理员类型变化
+                form.on('select(adminTypeChange)', function (data) {
+                    var adminType = data.value;
+                    if (adminType == '0') {
+                        // 超级管理员：隐藏社团选择，清空社团值
+                        $("#clubIdFormItem").hide();
+                        $("#box_clubId").val('');
+                    } else if (adminType == '1') {
+                        // 社团管理员：显示社团选择
+                        $("#clubIdFormItem").show();
+                    } else {
+                        $("#clubIdFormItem").hide();
+                    }
+                    form.render();
+                });
+
+                form.on('submit(submitForm)',
+                    function (data) {
+                        var url = '/ClubHub/Admin/Create';
+                        if (!!data.field.id && data.field.id != '0' && data.field.id != '') {
+                            url = '/ClubHub/Admin/Edit';
+                        }
+
+                        var postData = {
+                            StudentId: data.field.StudentId || '',
+                            Name: data.field.Name || '',
+                            Sex: parseInt(data.field.Sex) || 0,
+                            PhoneNumber: data.field.PhoneNumber || '',
+                            Password: data.field.Password || '',
+                            AdminType: parseInt(data.field.AdminType) || 0
+                        };
+
+                        // 如果是编辑模式，添加ID
+                        if (url === '/ClubHub/Admin/Edit') {
+                            postData.Id = parseInt(data.field.id) || 0;
+                        }
+
+                        // 根据管理员类型处理社团ID
+                        if (postData.AdminType == 1 && data.field.ClubId) {
+                            postData.ClubId = parseInt(data.field.ClubId);
+                        }
+
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: postData,
+                            dataType: "json",
+                            success: function (response) {
+                                var isSuccess = (response && (response.Msg || response.msg));
+                                var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                if (isSuccess) {
+                                    layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(formObj);
+                                    table.reload('List', {page: {curr: 1}}, 'data');
+                                } else {
+                                    layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                var errorMsg = "请求失败";
+                                if (XMLHttpRequest.responseText) {
+                                    try {
+                                        var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                        errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                    } catch (e) {
+                                        errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                    }
+                                }
+                                layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        });
+                        return false;
+                    });
+                form.render();
+                return false;
+            }
+
+            var active = {
+                reload: function () {
+                    table.reload('List', {
+                        page: {curr: 1},
+                        where: {
+                            Name: $('#adminName').val(),
+                            AdminType: $('#adminType').val() || null,
+                            ClubId: $('#clubIdFilter').val() || null
+                        }
+                    }, 'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加社长",
+                        type: 1,
+                        area: ['500px', '550px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) {
+                            $("#submitForm").click();
+                        },
+                        btn2: function (index, obj) {
+                            layer.close(index);
+                        },
+                        cancel: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                    initForm(addForm);
+                }
+            };
+
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    if (obj.event === 'del') {
+                        // 检查是否为社长且社团还有成员
+                        if (data.adminType == 1 && data.memberCount > 0) {
+                            layer.msg('该社长对应的社团还有 ' + data.memberCount + ' 名成员，无法删除社长', {icon: 5, time: 3000, shade: 0.08});
+                            return;
+                        }
+                        layer.confirm('确定要删除这个管理员吗？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Admin/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    success: function (response) {
+                                        var isSuccess = (response && (response.Msg || response.msg));
+                                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                        if (isSuccess) {
+                                            layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            table.reload('List', {page: {curr: 1}}, 'data');
+                                        } else {
+                                            layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                        }
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var str = $('#add_box').html();
+                        var editForm = layer.open({
+                            title: "编辑社长",
+                            type: 1,
+                            area: ['500px', '550px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) {
+                                $("#submitForm").click();
+                            },
+                            btn2: function (index, obj) {
+                                layer.close(index);
+                            },
+                            cancel: function (index) {
+                                layer.close(index);
+                            }
+                        });
+                        initForm(editForm, data);
+                    }
+                });
+
+        });
+</script>

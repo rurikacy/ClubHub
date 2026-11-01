@@ -1,0 +1,263 @@
+@{
+    Layout = null;
+}
+
+<style>
+    .question-card {
+        background: #fff;
+        border: 1px solid #e6e6e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .question-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .question-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .question-desc {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .question-meta {
+        color: #999;
+        font-size: 12px;
+    }
+
+    .question-status {
+        float: right;
+    }
+
+    .answer-form .item-box {
+        background: #f8f8f8;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+    }
+
+    .answer-form .item-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .answer-form .option-item {
+        padding: 8px 0;
+    }
+</style>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>问卷中心</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <button class="layui-btn layui-btn-sm" onclick="loadList()" style="background-color: #8B0000; color: white;">刷新</button>
+</div>
+
+<div id="questionContainer" style="padding: 15px;"></div>
+
+<div id="pagination" style="padding: 0 15px;"></div>
+
+<script>
+    layui.use(['layer', 'laypage', 'form'], function () {
+        var $ = layui.$;
+        var layer = layui.layer;
+        var laypage = layui.laypage;
+        var form = layui.form;
+
+        var currentPage = 1;
+        var pageSize = 10;
+
+        window.loadList = function () {
+            $.get('/ClubHub/Question/GetMemberList', {page: currentPage, limit: pageSize}, function (res) {
+                var container = $('#questionContainer');
+                container.empty();
+
+                if (!res.msg || res.count === 0) {
+                    container.html('<div style="text-align: center; color: #999; padding: 50px;">暂无问卷</div>');
+                    return;
+                }
+
+                res.data.forEach(function (item) {
+                    var statusHtml = item.hasAnswered
+                        ? '<span class="layui-badge layui-bg-green">已回答</span>'
+                        : '<span class="layui-badge layui-bg-orange">待回答</span>';
+
+                    var html = '<div class="question-card">';
+                    html += '<div class="question-title">' + item.title + '<span class="question-status">' + statusHtml + '</span></div>';
+                    html += '<div class="question-desc">' + (item.description || '暂无描述') + '</div>';
+                    html += '<div class="question-meta">';
+                    html += '<span>发布社团：' + item.clubName + '</span>';
+                    html += '<span style="margin-left: 20px;">发布时间：' + new Date(item.enterData).toLocaleString() + '</span>';
+                    if (!item.hasAnswered) {
+                        html += '<a href="javascript:;" onclick="openAnswer(' + item.id + ')" class="layui-btn layui-btn-xs" style="float: right; background-color: #8B0000; color: white;">填写问卷</a>';
+                    } else {
+                        html += '<a href="javascript:;" onclick="viewAnswer(' + item.id + ')" class="layui-btn layui-btn-xs" style="float: right; background-color: #8B0000; color: white;">查看回答</a>';
+                    }
+                    html += '</div></div>';
+                    container.append(html);
+                });
+
+                // 分页
+                laypage.render({
+                    elem: 'pagination',
+                    count: res.count,
+                    curr: currentPage,
+                    limit: pageSize,
+                    jump: function (obj, first) {
+                        if (!first) {
+                            currentPage = obj.curr;
+                            loadList();
+                        }
+                    }
+                });
+            });
+        };
+
+        window.openAnswer = function (questionId) {
+            $.get('/ClubHub/Question/GetDetail', {questionId: questionId}, function (res) {
+                if (!res.msg) {
+                    layer.msg(res.message || '获取问卷失败');
+                    return;
+                }
+
+                var data = res.data;
+                var content = '<div class="answer-form" style="padding: 20px; max-height: 500px; overflow-y: auto;">';
+                content += '<h3 style="margin-bottom: 10px;">' + data.title + '</h3>';
+                if (data.description) {
+                    content += '<p style="color: #666; margin-bottom: 20px;">' + data.description + '</p>';
+                }
+
+                data.items.forEach(function (item, index) {
+                    content += '<div class="item-box" data-item-id="' + item.id + '">';
+                    content += '<div class="item-title">' + (index + 1) + '. ' + item.content;
+                    content += ' <span style="color: #999; font-weight: normal;">(' + (item.itemType === 1 ? '单选' : '多选') + ')</span></div>';
+
+                    item.optionList.forEach(function (opt, optIndex) {
+                        if (item.itemType === 1) {
+                            content += '<div class="option-item"><label style="cursor: pointer;"><input type="radio" name="item_' + item.id + '" value="' + optIndex + '" style="margin-right: 8px;"> ' + opt + '</label></div>';
+                        } else {
+                            content += '<div class="option-item"><label style="cursor: pointer;"><input type="checkbox" name="item_' + item.id + '" value="' + optIndex + '" style="margin-right: 8px;"> ' + opt + '</label></div>';
+                        }
+                    });
+
+                    content += '</div>';
+                });
+
+                content += '</div>';
+
+                var answerIndex = layer.open({
+                    type: 1,
+                    title: '填写问卷',
+                    area: ['600px', '550px'],
+                    content: content,
+                    btn: ['提交', '取消'],
+                    success: function () {
+                        form.render();
+                    },
+                    yes: function (index) {
+                        submitAnswer(questionId, data.items, index);
+                    }
+                });
+            });
+        };
+
+        function submitAnswer(questionId, items, layerIndex) {
+            var answers = [];
+            var valid = true;
+
+            items.forEach(function (item) {
+                var values = [];
+                if (item.itemType === 1) {
+                    var checked = $('input[name="item_' + item.id + '"]:checked').val();
+                    if (checked !== undefined) values.push(checked);
+                } else {
+                    $('input[name="item_' + item.id + '"]:checked').each(function () {
+                        values.push($(this).val());
+                    });
+                }
+
+                if (values.length === 0) {
+                    valid = false;
+                }
+
+                answers.push({itemId: item.id, answer: values.join(',')});
+            });
+
+            if (!valid) {
+                layer.msg('请回答所有题目');
+                return;
+            }
+
+            $.ajax({
+                url: '/ClubHub/Question/SubmitAnswer',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({questionId: questionId, answers: answers}),
+                success: function (res) {
+                    if (res.msg) {
+                        layer.msg('提交成功');
+                        layer.close(layerIndex);
+                        loadList();
+                    } else {
+                        layer.msg(res.message || '提交失败');
+                    }
+                }
+            });
+        }
+
+        window.viewAnswer = function (questionId) {
+            $.get('/ClubHub/Question/GetDetail', {questionId: questionId}, function (res) {
+                if (!res.msg) {
+                    layer.msg(res.message || '获取问卷失败');
+                    return;
+                }
+
+                var data = res.data;
+                var content = '<div style="padding: 20px; max-height: 500px; overflow-y: auto;">';
+                content += '<h3 style="margin-bottom: 10px;">' + data.title + '</h3>';
+                if (data.description) {
+                    content += '<p style="color: #666; margin-bottom: 20px;">' + data.description + '</p>';
+                }
+
+                data.items.forEach(function (item, index) {
+                    content += '<div style="background: #f8f8f8; padding: 15px; margin-bottom: 15px; border-radius: 4px;">';
+                    content += '<div style="font-weight: bold; margin-bottom: 10px;">' + (index + 1) + '. ' + item.content + '</div>';
+
+                    var myAnswers = item.myAnswer ? item.myAnswer.split(',') : [];
+                    item.optionList.forEach(function (opt, optIndex) {
+                        var isSelected = myAnswers.includes(optIndex.toString());
+                        var style = isSelected ? 'color: #1E9FFF; font-weight: bold;' : 'color: #666;';
+                        var icon = isSelected ? '✓ ' : '○ ';
+                        content += '<div style="padding: 5px 0; ' + style + '">' + icon + opt + '</div>';
+                    });
+
+                    content += '</div>';
+                });
+
+                content += '</div>';
+
+                layer.open({
+                    type: 1,
+                    title: '我的回答',
+                    area: ['500px', '500px'],
+                    content: content
+                });
+            });
+        };
+
+        // 初始加载
+        loadList();
+    });
+</script>

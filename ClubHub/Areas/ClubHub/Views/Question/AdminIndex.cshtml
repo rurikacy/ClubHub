@@ -1,0 +1,307 @@
+@{
+    Layout = null;
+    bool isSuperAdmin = ViewBag.IsSuperAdmin ?? false;
+    string currentClubId = ViewBag.CurrentClubId;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>问卷管理</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        <span>问卷标题：</span>
+        <div class="layui-inline">
+            <input class="layui-input" name="questionTitle" id="questionTitle" autocomplete="off" placeholder="请输入问卷标题" style="width: 150px;">
+        </div>
+        @if (isSuperAdmin)
+        {
+            <span>所属社团：</span>
+            <div class="layui-inline">
+                <select name="clubIdFilter" id="clubIdFilter" class="layui-input" style="width: 150px;">
+                    <option value="">全部社团</option>
+                </select>
+            </div>
+        }
+        <button class="layui-btn layui-btn-sm" data-type="search" style="background-color: #8B0000; color: white;">搜索</button>
+        <button class="layui-btn layui-btn-sm" data-type="reload" style="background-color: #8B0000; color: white;">刷新</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn layui-btn-sm" data-type="add" style="background-color: #8B0000;">新增问卷</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="questionList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="stats" style="background-color: #8B0000; color: white;">查看统计</a>
+    <a class="layui-btn layui-btn-xs" lay-event="del" style="background-color: #8B0000; color: white;">删除</a>
+</script>
+
+<script>
+    layui.use(['table', 'form', 'layer'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        var isSuperAdmin = @(isSuperAdmin ? "true" : "false");
+
+        function initTable() {
+            table.render({
+                id: 'List',
+                elem: '#questionList',
+                url: '/ClubHub/Question/GetAdminList',
+                cols: [[
+                    {field: 'id', title: 'ID', width: 60, sort: true, align: 'center'},
+                    {field: 'title', title: '问卷标题', width: 200, align: 'center'},
+                    {field: 'description', title: '问卷描述', width: 200, align: 'center'},
+                    {field: 'clubName', title: '所属社团', width: 180, align: 'center'},
+                    {field: 'adminName', title: '发布人', width: 100, align: 'center'},
+                    {field: 'answerCount', title: '回答人数', width: 90, align: 'center'},
+                    {
+                        field: 'enterData', title: '创建时间', width: 160, align: 'center', templet: function (d) {
+                            return d.enterData ? new Date(d.enterData).toLocaleString() : '';
+                        }
+                    },
+                    {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 255, align: 'center'}
+                ]],
+                done: function () {
+                    $("[data-field='id']").css('display', 'none');
+                },
+                page: true
+            });
+        }
+
+        initTable();
+
+        // 加载社团列表
+        if (isSuperAdmin) {
+            $.get('/ClubHub/Question/GetClubList', function (res) {
+                var html = '<option value="">全部社团</option>';
+                if (res && res.length > 0) {
+                    res.forEach(function (item) {
+                        html += '<option value="' + item.id + '">' + item.name + '</option>';
+                    });
+                }
+                $('#clubIdFilter').html(html);
+                form.render('select');
+            });
+        }
+
+        var active = {
+            search: function () {
+                table.reload('List', {
+                    page: {curr: 1},
+                    where: {
+                        Title: $('#questionTitle').val(),
+                        ClubId: $('#clubIdFilter').val() || null
+                    }
+                });
+            },
+            reload: function () {
+                $('#questionTitle').val('');
+                $('#clubIdFilter').val('');
+                form.render('select');
+                table.reload('List', {page: {curr: 1}, where: {Title: '', ClubId: null}});
+            },
+            add: function () {
+                openCreateDialog();
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除问卷"' + data.title + '"吗？删除后所有答案也将被删除！', function (index) {
+                    $.post('/ClubHub/Question/Delete', {id: data.id}, function (res) {
+                        if (res.msg) {
+                            layer.msg('删除成功');
+                            table.reload('List');
+                        } else {
+                            layer.msg(res.message || '删除失败');
+                        }
+                    });
+                    layer.close(index);
+                });
+            } else if (obj.event === 'stats') {
+                openStatsDialog(data);
+            }
+        });
+
+        function openCreateDialog() {
+            var content = '<div style="padding: 20px;">';
+            content += '<form class="layui-form" lay-filter="createForm">';
+
+            if (isSuperAdmin) {
+                content += '<div class="layui-form-item"><label class="layui-form-label">所属社团</label>';
+                content += '<div class="layui-input-block"><select name="clubId" id="createClubId" lay-verify="required"><option value="">请选择社团</option></select></div></div>';
+            }
+
+            content += '<div class="layui-form-item"><label class="layui-form-label">问卷标题</label>';
+            content += '<div class="layui-input-block"><input type="text" name="title" id="createTitle" lay-verify="required" placeholder="请输入问卷标题" class="layui-input"></div></div>';
+
+            content += '<div class="layui-form-item"><label class="layui-form-label">问卷描述</label>';
+            content += '<div class="layui-input-block"><textarea name="description" id="createDesc" placeholder="请输入问卷描述" class="layui-textarea"></textarea></div></div>';
+
+            content += '<div class="layui-form-item"><label class="layui-form-label">题目列表</label>';
+            content += '<div class="layui-input-block"><div id="itemsContainer"></div>';
+            content += '<button type="button" class="layui-btn layui-btn-sm" onclick="addItem()" style="background-color: #8B0000; color: white;">+ 添加题目</button></div></div>';
+
+            content += '</form></div>';
+
+            var createIndex = layer.open({
+                type: 1,
+                title: '新增问卷',
+                area: ['700px', '600px'],
+                content: content,
+                btn: ['提交', '取消'],
+                yes: function (index) {
+                    submitCreate(index);
+                },
+                success: function () {
+                    if (isSuperAdmin) {
+                        $.get('/ClubHub/Question/GetClubList', function (res) {
+                            var html = '<option value="">请选择社团</option>';
+                            res.forEach(function (item) {
+                                html += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            $('#createClubId').html(html);
+                            form.render('select');
+                        });
+                    }
+                    addItem(); // 默认添加一个题目
+                }
+            });
+        }
+
+        var itemIndex = 0;
+        window.addItem = function () {
+            itemIndex++;
+            var html = '<div class="item-box" data-index="' + itemIndex + '" style="border: 1px solid #e6e6e6; padding: 10px; margin-bottom: 10px; border-radius: 4px;">';
+            html += '<div style="display: flex; justify-content: space-between; margin-bottom: 10px;">';
+            html += '<span style="font-weight: bold;">题目 ' + itemIndex + '</span>';
+            html += '<a href="javascript:;" onclick="removeItem(' + itemIndex + ')" style="color: #FF5722;">删除</a></div>';
+            html += '<div class="layui-form-item" style="margin-bottom: 10px;"><input type="text" class="layui-input item-content" placeholder="请输入题目内容"></div>';
+            html += '<div class="layui-form-item" style="margin-bottom: 10px;">';
+            html += '<select class="layui-input item-type" style="width: 120px;"><option value="1">单选</option><option value="2">多选</option></select></div>';
+            html += '<div class="options-container">';
+            html += '<div class="option-item" style="margin-bottom: 5px;"><input type="text" class="layui-input option-input" placeholder="选项1" style="width: calc(100% - 80px); display: inline-block;"><a href="javascript:;" onclick="removeOption(this)" style="margin-left: 10px; color: #FF5722;">删除</a></div>';
+            html += '<div class="option-item" style="margin-bottom: 5px;"><input type="text" class="layui-input option-input" placeholder="选项2" style="width: calc(100% - 80px); display: inline-block;"><a href="javascript:;" onclick="removeOption(this)" style="margin-left: 10px; color: #FF5722;">删除</a></div>';
+            html += '</div>';
+            html += '<a href="javascript:;" onclick="addOption(this)" style="color: #1E9FFF;">+ 添加选项</a>';
+            html += '</div>';
+            $('#itemsContainer').append(html);
+            form.render('select');
+        };
+
+        window.removeItem = function (index) {
+            $('.item-box[data-index="' + index + '"]').remove();
+        };
+
+        window.addOption = function (btn) {
+            var container = $(btn).siblings('.options-container');
+            var count = container.find('.option-item').length + 1;
+            var html = '<div class="option-item" style="margin-bottom: 5px;"><input type="text" class="layui-input option-input" placeholder="选项' + count + '" style="width: calc(100% - 80px); display: inline-block;"><a href="javascript:;" onclick="removeOption(this)" style="margin-left: 10px; color: #FF5722;">删除</a></div>';
+            container.append(html);
+        };
+
+        window.removeOption = function (btn) {
+            $(btn).parent('.option-item').remove();
+        };
+
+        function submitCreate(layerIndex) {
+            var title = $('#createTitle').val();
+            var description = $('#createDesc').val();
+            var clubId = isSuperAdmin ? ($('#createClubId').val() || 0) : 0;
+
+            if (!title) {
+                layer.msg('请输入问卷标题');
+                return;
+            }
+
+            var items = [];
+            $('.item-box').each(function () {
+                var content = $(this).find('.item-content').val();
+                var itemType = parseInt($(this).find('.item-type').val());
+                var options = [];
+                $(this).find('.option-input').each(function () {
+                    var val = $(this).val();
+                    if (val) options.push(val);
+                });
+
+                if (content && options.length >= 2) {
+                    items.push({content: content, itemType: itemType, options: options});
+                }
+            });
+
+            if (items.length === 0) {
+                layer.msg('请至少添加一个有效题目（题目内容和至少2个选项）');
+                return;
+            }
+
+            $.ajax({
+                url: '/ClubHub/Question/Create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({clubId: clubId, title: title, description: description, items: items}),
+                success: function (res) {
+                    if (res.msg) {
+                        layer.msg('创建成功');
+                        layer.close(layerIndex);
+                        table.reload('List');
+                    } else {
+                        layer.msg(res.message || '创建失败');
+                    }
+                }
+            });
+        }
+
+        function openStatsDialog(data) {
+            $.get('/ClubHub/Question/GetStats', {questionId: data.id}, function (res) {
+                if (!res.msg) {
+                    layer.msg(res.message || '获取统计失败');
+                    return;
+                }
+
+                var content = '<div style="padding: 20px; max-height: 500px; overflow-y: auto;">';
+                content += '<h3 style="margin-bottom: 15px;">' + data.title + '</h3>';
+                content += '<p style="color: #666; margin-bottom: 15px;">共 ' + res.answerCount + ' 人回答</p>';
+
+                res.data.forEach(function (item, index) {
+                    content += '<div style="margin-bottom: 20px; padding: 15px; background: #f8f8f8; border-radius: 4px;">';
+                    content += '<p style="font-weight: bold; margin-bottom: 10px;">' + (index + 1) + '. ' + item.content;
+                    content += ' <span style="color: #999; font-weight: normal;">(' + (item.itemType === 1 ? '单选' : '多选') + ')</span></p>';
+
+                    item.optionStats.forEach(function (opt) {
+                        content += '<div style="margin-bottom: 8px;">';
+                        content += '<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">';
+                        content += '<span>' + opt.optionText + '</span>';
+                        content += '<span>' + opt.count + '人 (' + opt.percentage + '%)</span></div>';
+                        content += '<div style="background: #e6e6e6; height: 8px; border-radius: 4px;">';
+                        content += '<div style="background: #1E9FFF; height: 100%; width: ' + opt.percentage + '%; border-radius: 4px;"></div></div>';
+                        content += '</div>';
+                    });
+
+                    content += '</div>';
+                });
+
+                content += '</div>';
+
+                layer.open({
+                    type: 1,
+                    title: '问卷统计',
+                    area: ['600px', '550px'],
+                    content: content
+                });
+            });
+        }
+    });
+</script>

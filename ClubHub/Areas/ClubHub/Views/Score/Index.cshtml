@@ -1,0 +1,393 @@
+
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>成员管理</cite></a><span lay-separator="">/</span>
+        <a><cite>成员成绩管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        成员姓名：
+        <div class="layui-inline">
+            <input class="layui-input" name="studentName" id="studentName" autocomplete="off" placeholder="请输入成员姓名">
+        </div>
+        课程名称：
+        <div class="layui-inline">
+            <input class="layui-input" name="courseName" id="courseName" autocomplete="off" placeholder="请输入课程名称">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="tableList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+</script>
+
+@*弹窗*@
+<script type="text/template" id="add_box">
+    <div class="layui-form layui-form-pane" style="padding:10px">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">学生姓名</label>
+            <div name="studentId" id="box_studentId" lay-filter="box_studentId" class="layui-input-block xm-select-demo"></div>
+            <div name="studentName" style="display: none;" lay-filter="box_studentId" class="layui-input-block xm-select-demo"></div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属专业</label>
+            <div name="majorId" id="box_majorId" class="layui-input-block xm-select-demo"></div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">课程名称</label>
+            <div name="courseId" id="box_courseId" class="layui-input-block xm-select-demo"></div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">学时</label>
+            <div class="layui-input-block">
+                <input type="number" name="stuTime" id="box_hours" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">学分</label>
+            <div class="layui-input-block">
+                <input type="number" name="stuGrade" id="box_credit" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">成绩</label>
+            <div class="layui-input-block">
+                <input type="number" name="stuScore" id="box_score" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script>
+    layui.use(['table', 'form', 'tree'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+            var xmSelect = layui.xmSelect;
+
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#tableList',
+                    url: '/ClubHub/Score/List',
+                    title: '课程数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 20, fixed: 'left', unresize: true, sort: true},
+                            {field: 'studentId', title: 'studentId', width: 20, fixed: 'left', unresize: true, sort: true},
+                            {field: 'courseId', title: 'courseId', width: 20, fixed: 'left', unresize: true, sort: true},
+                            @*{ field: 'studentNum', title: '学生编号', width: 150, align: 'center' },*@
+                            {field: 'studentName', title: '学生姓名', width: 150, align: 'center'},
+                            {field: 'courseId', title: '课程编号', width: 150, align: 'center'},
+                            {field: 'majorName', title: '专业名称', width: 150, align: 'center'},
+                            {field: 'courseName', title: '课程名称', width: 150, align: 'center'},
+                            {field: 'stuTime', title: '学时', width: 150, align: 'center'},
+                            {field: 'stuGrade', title: '学分', width: 150, align: 'center'},
+                            {field: 'stuScore', title: '成绩', width: 150, align: 'center'},
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 300, align: 'center'}
+                        ]
+                    ],
+                    done: function () { // 隐藏id列
+                        $("[data-field='id']").css('display', 'none');
+                        $("[data-field='studentId']").css('display', 'none');
+                        $("[data-field='courseId']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+
+            //初始化列表页面
+            initIndex();
+
+
+            //初始化表单页面
+            function initForm(formObj, dataObj) {
+                console.log(dataObj);
+
+                //初始化学生下拉框
+                $.ajax({
+                    type: "GET",
+                    url: '/ClubHub/Student/ListTotal',
+                    dataType: "json",
+                    beforeSend: function () {
+                    },
+                    success: function (res) {
+                        if (res.msg) {
+                            var studentSelect = xmSelect.render({
+                                el: '#box_studentId',
+                                radio: true,
+                                clickClose: true,
+                                name: 'studentId',
+                                data: res.data,
+                            })
+
+                            if (!!dataObj) {
+                                studentSelect.setValue([
+                                    {name: dataObj.studentName, value: dataObj.studentId}
+                                ]);
+
+                                //置为不可选择
+                                document.getElementById('box_studentId').onclick = function () {
+                                    studentSelect.update({disabled: true});
+                                }
+                            }
+                        }
+                    },
+                    complete: function () {
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    }
+                });
+
+                //初始化专业下拉框
+                $.ajax({
+                    type: "GET",
+                    url: '/ClubHub/Base/MajorList',
+                    dataType: "json",
+                    beforeSend: function () {
+                    },
+                    success: function (res) {
+                        if (res.msg) {
+                            var majorSelect = xmSelect.render({
+                                el: '#box_majorId',
+                                radio: true,
+                                clickClose: true,
+                                name: 'majorId',
+                                data: res.data,
+                                on: function (data) {
+                                    //change, 此次选择变化的数据,数组
+                                    var change = data.change;
+                                    //isAdd, 此次操作是新增还是删除
+                                    var isAdd = data.isAdd;
+
+                                }
+                            });
+                            if (!!dataObj) {
+                                majorSelect.setValue([
+                                    {name: dataObj.majorName, value: dataObj.majorId}
+                                ]);
+                                //置为不可选择
+                                document.getElementById('box_majorId').onclick = function () {
+                                    majorSelect.update({disabled: true});
+                                }
+                            }
+                        }
+                    },
+                    complete: function () {
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    }
+                });
+
+                //初始化课程下拉框
+                $.ajax({
+                    type: "GET",
+                    url: '/ClubHub/Course/CourseList',
+                    dataType: "json",
+                    beforeSend: function () {
+                    },
+                    success: function (res) {
+                        if (res.msg) {
+                            var courseSelect = xmSelect.render({
+                                el: '#box_courseId',
+                                radio: true,
+                                clickClose: true,
+                                name: 'courseId',
+                                data: res.data,
+                                on: function (data) {
+                                    //change, 此次选择变化的数据,数组
+                                    var change = data.change;
+                                    //isAdd, 此次操作是新增还是删除
+                                    var isAdd = data.isAdd;
+
+                                }
+                            });
+
+                            if (!!dataObj) {
+                                courseSelect.setValue([
+                                    {name: dataObj.courseName, value: dataObj.courseId}
+                                ]);
+                                //置为不可选择
+                                document.getElementById('box_courseId').onclick = function () {
+                                    courseSelect.update({disabled: true});
+                                }
+                            }
+                        }
+                    },
+                    complete: function () {
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    }
+                });
+
+                if (!!dataObj) {
+                    $("#box_id").val(dataObj.id);
+                    $("#box_hours").val(dataObj.stuTime);
+                    $("#box_credit").val(dataObj.stuGrade);
+                    $("#box_score").val(dataObj.stuScore);
+                }
+
+                //表单提交
+                form.on('submit(submitForm)',
+                    function (data) {
+                        var url = '/ClubHub/Score/Add';
+                        if (!!data.field.id) {
+                            url = '/ClubHub/Score/Edit';
+                        }
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: data.field,
+                            dataType: "json",
+                            beforeSend: function () {
+                            },
+                            success: function (data) {
+                                if (data.msg) {
+                                    layer.msg(data.message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(formObj);
+                                    initIndex();
+                                } else {
+                                    layer.msg(data.message, {icon: 5, time: 1000, shade: 0.08});
+                                }
+                            },
+                            complete: function () {
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            }
+                        });
+                    });
+                form.render();
+                return false;
+            }
+
+            //页面事件
+            var active = {
+                reload: function () {
+
+                    //执行重载
+                    table.reload('List',
+                        {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                StudentName: $('#studentName').val(),
+                                CourseName: $('#courseName').val()
+                            }
+                        },
+                        'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加",
+                        type: 1,
+                        area: ['600px', '550px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) { //保存按钮事件
+                            $("#submitForm").click();
+                        },
+                        btn2: function (index, obj) { //窗口关闭按钮事件
+                            layer.close(index);
+                        },
+                        cancel: function (index) { //窗口关闭按钮事件
+                            layer.close(index);
+                        }
+                    });
+
+                    initForm(addForm);
+                }
+            };
+
+            //监听页面工具事件（搜索、新增、刷新等）
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            //监听行工具事件（编辑、删除等）
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    console.log(obj);
+                    if (obj.event === 'del') {
+                        layer.confirm('真的删除行么？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Score/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    beforeSend: function () {
+                                    },
+                                    success: function (data) {
+                                        if (data.msg) {
+                                            layer.msg(data.message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            initIndex();
+                                        } else {
+                                            layer.msg(data.message, {icon: 5, time: 1000, shade: 0.08});
+                                        }
+                                    },
+                                    complete: function () {
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var editForm = layer.open({
+                            title: "编辑",
+                            type: 1,
+                            area: ['600px', '550px'],
+                            content: $('#add_box').html(),
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) { //保存按钮事件
+                                $("#submitForm").click();
+                            },
+                            btn2: function (index, obj) { //窗口关闭按钮事件
+                                layer.close(index);
+                            },
+                            cancel: function (index) { //窗口关闭按钮事件
+                                layer.close(index);
+                            }
+                        });
+
+                        initForm(editForm, data);
+                    }
+
+                });
+        });
+
+</script>

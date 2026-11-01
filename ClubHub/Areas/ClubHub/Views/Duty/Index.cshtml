@@ -1,0 +1,512 @@
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>成员管理</cite></a><span lay-separator="">/</span>
+        <a><cite>社团部门管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        <span>部门名称：</span>
+        <div class="layui-inline">
+            <input class="layui-input" name="dutyName" id="dutyName" autocomplete="off" placeholder="请输入部门名称">
+        </div>
+        <span id="clubFilterLabel">所属社团：</span>
+        <div class="layui-inline" id="clubFilterSelect">
+            <select name="clubId" id="clubId" class="layui-input" style="width: 150px;">
+                <option value="">全部社团</option>
+            </select>
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="dutyList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    {{# if(d.memberNum > 0){ }}
+    <a class="layui-btn layui-btn-xs layui-btn-disabled" style="background-color: #ccc; color: white; cursor: not-allowed;" title="该部门还有成员，无法删除">删除</a>
+    {{# } else { }}
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+    {{# } }}
+</script>
+
+@*新增、编辑弹窗*@
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" style="padding:10px" lay-filter="addFormFilter">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item" id="clubSelectItem">
+            <label class="layui-form-label">所属社团</label>
+            <div class="layui-input-block">
+                <select name="ClubId" id="box_clubId" lay-verify="required">
+                    <option value="">请选择社团</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">部门名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="Name" id="box_name" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入部门名称，如：宣传部、美术部">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">部门简介</label>
+            <div class="layui-input-block">
+                <textarea name="Description" id="box_description" class="layui-textarea" placeholder="请输入部门简介" style="min-height: 100px;"></textarea>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+            var currentClubId = '@ViewBag.CurrentClubId';
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#dutyList',
+                    url: '/ClubHub/Duty/GetAll',
+                    title: '部门数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                            {field: 'name', title: '部门名称', width: 200, align: 'center'},
+                            {field: 'description', title: '部门简介', width: 250, align: 'center'},
+                            {field: 'clubName', title: '所属社团', width: 150, align: 'center'},
+                            {
+                                field: 'leaderName',
+                                title: '部长',
+                                width: 120,
+                                align: 'center',
+                                templet: function (d) {
+                                    return d.leaderName ? '<span style="color: #FF5722;">' + d.leaderName + '</span>' : '<span style="color: #999;">未分配</span>';
+                                }
+                            },
+                            {
+                                field: 'memberNum',
+                                title: '部门人数',
+                                width: 150,
+                                align: 'center',
+                                templet: function (d) {
+                                    return d.memberNum + ' <a class="layui-btn layui-btn-xs" lay-event="viewMembers" style="background-color: rgb(211, 77, 77); color: white; margin-left:5px; padding: 0 5px;"><i class="layui-icon layui-icon-form"></i></a>';
+                                }
+                            },
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 200, align: 'center'}
+                        ]
+                    ],
+                    done: function () {
+                        $("[data-field='id']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+            initIndex();
+
+            // 加载社团列表用于筛选（仅超级管理员显示）
+            if (!currentClubId) {
+                $.get('/ClubHub/Duty/GetClubList', function (res) {
+                    var html = '<option value="">全部社团</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#clubId").html(html);
+                    form.render('select');
+                });
+            } else {
+                // 社团管理员隐藏社团筛选
+                $("#clubFilterLabel").hide();
+                $("#clubFilterSelect").hide();
+            }
+
+            function initForm(formObj, dataObj) {
+                // 加载社团列表
+                $.get('/ClubHub/Duty/GetClubList', function (res) {
+                    var html = '<option value="">请选择社团</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#box_clubId").html(html);
+
+                    // 社团管理员隐藏社团选择，自动设置
+                    if (currentClubId) {
+                        $("#clubSelectItem").hide();
+                        $("#box_clubId").val(currentClubId);
+                    }
+
+                    if (!!dataObj) {
+                        $("#box_id").val(dataObj.id);
+                        $("#box_clubId").val(dataObj.clubId);
+                        $("#box_name").val(dataObj.name);
+                        $("#box_description").val(dataObj.description);
+                        // 编辑时禁止修改社团
+                        $("#clubSelectItem").hide();
+                    }
+
+                    form.render('select');
+                });
+
+                form.render();
+            }
+
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    if (obj.event === 'del') {
+                        layer.confirm('确定要删除这个部门吗？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Duty/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    success: function (response) {
+                                        var isSuccess = (response && (response.Msg || response.msg));
+                                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                        if (isSuccess) {
+                                            layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            table.reload('List', {page: {curr: 1}}, 'data');
+                                        } else {
+                                            layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                                        }
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var str = $('#add_box').html();
+                        var editForm = layer.open({
+                            title: "编辑部门",
+                            type: 1,
+                            area: ['500px', '400px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            btnAlign: 'c',
+                            yes: function (index, layero) {
+                                layero.find('form').trigger('submit');
+                            },
+                            btn2: function (index, obj) {
+                                layer.close(index);
+                            },
+                            cancel: function (index) {
+                                layer.close(index);
+                            },
+                            success: function(layero, index) {
+                                layero.find('.layui-layer-btn0').css({
+                                    'background-color': 'rgb(211, 77, 77)',
+                                    'color': 'white',
+                                    'border-color': 'rgb(211, 77, 77)'
+                                });
+                                layero.find('form').on('submit', function(e) {
+                                    e.preventDefault();
+                                    var name = $('#box_name').val();
+                                    var description = $('#box_description').val();
+                                    
+                                    if (!name) {
+                                        layer.msg("部门名称不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                        return false;
+                                    }
+                                    
+                                    var postData = {
+                                        Id: parseInt($('#box_id').val()) || 0,
+                                        Name: name,
+                                        Description: description || '',
+                                        ClubId: parseInt($('#box_clubId').val()) || 0
+                                    };
+                                    
+                                    $.ajax({
+                                        type: "POST",
+                                        url: '/ClubHub/Duty/Edit',
+                                        data: postData,
+                                        dataType: "json",
+                                        success: function (response) {
+                                            var isSuccess = (response && (response.Msg || response.msg));
+                                            var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                            if (isSuccess) {
+                                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                                layer.close(index);
+                                                table.reload('List', {page: {curr: 1}}, 'data');
+                                            } else {
+                                                layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                            }
+                                        },
+                                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                            var errorMsg = "请求失败";
+                                            if (XMLHttpRequest.responseText) {
+                                                try {
+                                                    var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                                    errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                                } catch (e) {
+                                                    errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                                }
+                                            }
+                                            layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                                        }
+                                    });
+                                    return false;
+                                });
+                            }
+                        });
+                        initForm(editForm, data);
+                    }
+                    if (obj.event === 'viewMembers') {
+                        layer.open({
+                            type: 1,
+                            title: '部门成员列表 - ' + data.name,
+                            area: ['800px', '600px'],
+                            content: '<div style="padding: 10px;"><table id="memberList" lay-filter="memberList"></table></div>',
+                            success: function (layero, index) {
+                                table.render({
+                                    elem: '#memberList',
+                                    id: 'memberList',
+                                    url: '/ClubHub/Duty/GetDutyMembers?dutyId=' + data.id,
+                                    page: true,
+                                    cols: [[
+                                        {field: 'studentId', title: '学号', width: 150, align: 'center'},
+                                        {field: 'name', title: '姓名', width: 150, align: 'center'},
+                                        {
+                                            field: 'sex',
+                                            title: '性别',
+                                            width: 100,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                if (d.sex == 1) return '男';
+                                                if (d.sex == 2) return '女';
+                                                return '未知';
+                                            }
+                                        },
+                                        {field: 'phoneNumber', title: '手机号', width: 150, align: 'center'},
+                                        {
+                                            field: 'dutyRole',
+                                            title: '职位',
+                                            width: 120,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                if (d.dutyRole == 1) return '<span class="layui-badge layui-bg-orange">部长</span>';
+                                                return '<span class="layui-badge layui-bg-blue">成员</span>';
+                                            }
+                                        },
+                                        {
+                                            title: '操作',
+                                            width: 200,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                var html = '';
+                                                if (d.dutyRole == 0) {
+                                                    html += '<a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="setLeader" style="color: white !important;">设为部长</a> ';
+                                                } else {
+                                                    html += '<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="setMember" style="color: white !important;">设为成员</a> ';
+                                                }
+                                                html += '<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="removeMember" style="color: white !important;">移除</a>';
+                                                return html;
+                                            }
+                                        }
+                                    ]]
+                                });
+                            }
+                        });
+                    }
+                });
+
+            // 监听部门成员列表的工具事件
+            table.on('tool(memberList)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'setLeader') {
+                    layer.confirm('确定将该成员设为部长吗？', function (index) {
+                        $.ajax({
+                            type: "POST",
+                            url: '/ClubHub/Duty/UpdateMemberRole',
+                            data: {dutyMemberId: data.dutyMemberId, role: 1},
+                            dataType: "json",
+                            success: function (res) {
+                                var isSuccess = res.Msg || res.msg;
+                                if (isSuccess) {
+                                    layer.msg("操作成功");
+                                    table.reload('memberList');
+                                } else {
+                                    layer.msg(res.Message || res.message || "操作失败");
+                                }
+                            },
+                            error: function () {
+                                layer.msg("请求失败");
+                            }
+                        });
+                        layer.close(index);
+                    });
+                } else if (obj.event === 'setMember') {
+                    layer.confirm('确定将该部长设为普通成员吗？', function (index) {
+                        $.ajax({
+                            type: "POST",
+                            url: '/ClubHub/Duty/UpdateMemberRole',
+                            data: {dutyMemberId: data.dutyMemberId, role: 0},
+                            dataType: "json",
+                            success: function (res) {
+                                var isSuccess = res.Msg || res.msg;
+                                if (isSuccess) {
+                                    layer.msg("操作成功");
+                                    table.reload('memberList');
+                                } else {
+                                    layer.msg(res.Message || res.message || "操作失败");
+                                }
+                            },
+                            error: function () {
+                                layer.msg("请求失败");
+                            }
+                        });
+                        layer.close(index);
+                    });
+                } else if (obj.event === 'removeMember') {
+                    layer.confirm('确定将该成员从部门中移除吗？', function (index) {
+                        $.ajax({
+                            type: "POST",
+                            url: '/ClubHub/Duty/RemoveMemberFromDuty',
+                            data: {dutyMemberId: data.dutyMemberId, dutyId: data.dutyId},
+                            dataType: "json",
+                            success: function (res) {
+                                var isSuccess = res.Msg || res.msg;
+                                if (isSuccess) {
+                                    layer.msg("移除成功");
+                                    table.reload('memberList');
+                                    table.reload('List'); // 刷新部门列表以更新人数
+                                } else {
+                                    layer.msg(res.Message || res.message || "移除失败");
+                                }
+                            },
+                            error: function () {
+                                layer.msg("请求失败");
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            // 更新搜索功能，添加社团筛选
+            var active = {
+                reload: function () {
+                    table.reload('List', {
+                        page: {curr: 1},
+                        where: {
+                            Name: $('#dutyName').val(),
+                            ClubId: $('#clubId').val() || null
+                        }
+                    }, 'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加部门",
+                        type: 1,
+                        area: ['500px', '400px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        btnAlign: 'c',
+                        yes: function (index, layero) {
+                            layero.find('form').trigger('submit');
+                        },
+                        btn2: function (index, obj) {
+                            layer.close(index);
+                        },
+                        cancel: function (index) {
+                            layer.close(index);
+                        },
+                        success: function(layero, index) {
+                            layero.find('.layui-layer-btn0').css({
+                                'background-color': 'rgb(211, 77, 77)',
+                                'color': 'white',
+                                'border-color': 'rgb(211, 77, 77)'
+                            });
+                            layero.find('form').on('submit', function(e) {
+                                e.preventDefault();
+                                var name = $('#box_name').val();
+                                var description = $('#box_description').val();
+                                
+                                if (!name) {
+                                    layer.msg("部门名称不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                    return false;
+                                }
+                                
+                                var postData = {
+                                    Name: name,
+                                    Description: description || '',
+                                    ClubId: currentClubId ? parseInt(currentClubId) : (parseInt($('#box_clubId').val()) || 0)
+                                };
+                                
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Duty/Create',
+                                    data: postData,
+                                    dataType: "json",
+                                    success: function (response) {
+                                        var isSuccess = (response && (response.Msg || response.msg));
+                                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                        if (isSuccess) {
+                                            layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            table.reload('List', {page: {curr: 1}}, 'data');
+                                        } else {
+                                            layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                        }
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        var errorMsg = "请求失败";
+                                        if (XMLHttpRequest.responseText) {
+                                            try {
+                                                var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                                errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                            } catch (e) {
+                                                errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                            }
+                                        }
+                                        layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                });
+                                return false;
+                            });
+                        }
+                    });
+                    initForm(addForm);
+                }
+            };
+
+        });
+</script>

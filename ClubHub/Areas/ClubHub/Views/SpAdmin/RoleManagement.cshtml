@@ -1,0 +1,289 @@
+@{
+    ViewData["Title"] = "角色管理";
+}
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">
+            <i class="layui-icon layui-icon-auz"></i> 角色管理
+        </div>
+        <div class="layui-card-body">
+            <!-- 搜索栏 -->
+            <div class="layui-form layui-row layui-col-space10">
+                <div class="layui-col-md3">
+                    <input type="text" id="keyword" placeholder="请输入角色名称" class="layui-input">
+                </div>
+                <div class="layui-col-md2">
+                    <button class="layui-btn layui-btn-normal" id="btnSearch">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button class="layui-btn layui-btn-primary" id="btnReset">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+
+            <!-- 工具栏 -->
+            <div class="layui-btn-group" style="margin: 15px 0;">
+                <button class="layui-btn layui-btn-normal" id="btnAdd">
+                    <i class="layui-icon layui-icon-add-1"></i> 添加角色
+                </button>
+                <button class="layui-btn" id="btnRefresh">
+                    <i class="layui-icon layui-icon-refresh-3"></i> 刷新
+                </button>
+            </div>
+
+            <!-- 数据表格 -->
+            <table class="layui-hide" id="roleTable" lay-filter="roleTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 操作按钮模板 -->
+<script type="text/html" id="toolbarTpl">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">删除</a>
+</script>
+
+<!-- 角色级别模板 -->
+<script type="text/html" id="levelTpl">
+    {{# if(d.level === 0){ }}
+        <span class="layui-badge layui-bg-red">超级管理员</span>
+    {{# } else if(d.level === 1){ }}
+        <span class="layui-badge layui-bg-orange">系统管理员</span>
+    {{# } else { }}
+        <span class="layui-badge layui-bg-blue">普通用户</span>
+    {{# } }}
+</script>
+
+<!-- 状态模板 -->
+<script type="text/html" id="statusTpl">
+    {{# if(d.status === 1){ }}
+        <span class="layui-badge layui-bg-green">启用</span>
+    {{# } else { }}
+        <span class="layui-badge layui-bg-gray">禁用</span>
+    {{# } }}
+</script>
+
+<!-- 添加/编辑角色弹窗 -->
+<div id="roleModal" style="display: none; padding: 20px;">
+    <form class="layui-form" lay-filter="roleForm">
+        <input type="hidden" name="id">
+        
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="name" class="layui-input" required lay-verify="required" placeholder="请输入角色名称">
+            </div>
+        </div>
+        
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色编码</label>
+            <div class="layui-input-block">
+                <input type="text" name="code" class="layui-input" required lay-verify="required" placeholder="请输入角色编码">
+            </div>
+        </div>
+        
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色级别</label>
+            <div class="layui-input-block">
+                <select name="level" required lay-verify="required">
+                    <option value="">请选择</option>
+                    <option value="0">超级管理员</option>
+                    <option value="1">系统管理员</option>
+                    <option value="2">普通用户</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="layui-form-item">
+            <label class="layui-form-label">角色描述</label>
+            <div class="layui-input-block">
+                <textarea name="description" class="layui-textarea" placeholder="请输入角色描述"></textarea>
+            </div>
+        </div>
+        
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="status" value="1" title="启用" checked>
+                <input type="radio" name="status" value="0" title="禁用">
+            </div>
+        </div>
+        
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="saveRole">保存</button>
+                <button type="button" class="layui-btn layui-btn-primary" id="btnCancel">取消</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['table', 'form', 'layer'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
+
+        // 渲染表格
+        var tableIns = table.render({
+            elem: '#roleTable',
+            url: '/ClubHub/SpAdmin/GetRoles',
+            method: 'get',
+            page: true,
+            limit: 10,
+            limits: [10, 20, 50, 100],
+            cols: [[
+                { type: 'checkbox', width: 50 },
+                { field: 'id', title: 'ID', width: 60, sort: true },
+                { field: 'name', title: '角色名称', width: 150 },
+                { field: 'code', title: '角色编码', width: 150 },
+                { field: 'level', title: '级别', width: 120, templet: '#levelTpl' },
+                { field: 'description', title: '描述', minWidth: 200 },
+                { field: 'status', title: '状态', width: 80, templet: '#statusTpl' },
+                { field: 'createTime', title: '创建时间', width: 160, sort: true },
+                { title: '操作', width: 150, toolbar: '#toolbarTpl', fixed: 'right' }
+            ]],
+            parseData: function (res) {
+                return {
+                    "code": res.code,
+                    "msg": res.message,
+                    "count": res.count,
+                    "data": res.data
+                };
+            }
+        });
+
+        // 搜索
+        $('#btnSearch').on('click', function () {
+            var keyword = $('#keyword').val();
+            
+            tableIns.reload({
+                where: {
+                    name: keyword
+                },
+                page: {
+                    curr: 1
+                }
+            });
+        });
+
+        // 重置
+        $('#btnReset').on('click', function () {
+            $('#keyword').val('');
+            
+            tableIns.reload({
+                where: {},
+                page: {
+                    curr: 1
+                }
+            });
+        });
+
+        // 刷新
+        $('#btnRefresh').on('click', function () {
+            tableIns.reload();
+        });
+
+        // 添加角色
+        $('#btnAdd').on('click', function () {
+            form.val('roleForm', {
+                id: 0,
+                name: '',
+                code: '',
+                level: '',
+                description: '',
+                status: 1
+            });
+            
+            layer.open({
+                type: 1,
+                title: '添加角色',
+                area: ['500px', '450px'],
+                content: $('#roleModal')
+            });
+            
+            form.render();
+        });
+
+        // 监听工具条
+        table.on('tool(roleTable)', function (obj) {
+            var data = obj.data;
+            
+            if (obj.event === 'edit') {
+                // 编辑
+                form.val('roleForm', {
+                    id: data.id,
+                    name: data.name,
+                    code: data.code,
+                    level: data.level,
+                    description: data.description,
+                    status: data.status
+                });
+                
+                layer.open({
+                    type: 1,
+                    title: '编辑角色',
+                    area: ['500px', '450px'],
+                    content: $('#roleModal')
+                });
+                
+                form.render();
+            } else if (obj.event === 'delete') {
+                // 删除
+                layer.confirm('确定要删除该角色吗？', function (index) {
+                    $.ajax({
+                        url: '/ClubHub/SpAdmin/DeleteRole',
+                        type: 'POST',
+                        data: { id: data.id },
+                        success: function (res) {
+                            if (res.msg) {
+                                layer.msg('删除成功', { icon: 1 });
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.message || '删除失败', { icon: 2 });
+                            }
+                        },
+                        error: function () {
+                            layer.msg('删除失败', { icon: 2 });
+                        }
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+
+        // 保存角色
+        form.on('submit(saveRole)', function (data) {
+            var formData = data.field;
+            var url = formData.id > 0 ? '/ClubHub/SpAdmin/UpdateRole' : '/ClubHub/SpAdmin/AddRole';
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                success: function (res) {
+                    if (res.msg) {
+                        layer.msg('保存成功', { icon: 1 });
+                        layer.closeAll();
+                        tableIns.reload();
+                    } else {
+                        layer.msg(res.message || '保存失败', { icon: 2 });
+                    }
+                },
+                error: function () {
+                    layer.msg('保存失败', { icon: 2 });
+                }
+            });
+            
+            return false;
+        });
+
+        // 取消按钮
+        $('#btnCancel').on('click', function () {
+            layer.closeAll();
+        });
+    });
+</script>

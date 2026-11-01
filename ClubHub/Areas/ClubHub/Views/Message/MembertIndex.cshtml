@@ -1,0 +1,66 @@
+@{
+    Layout = null;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>公告查阅</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        通知标题：
+        <div class="layui-inline">
+            <input class="layui-input" name="messageTitle" id="messageTitle" autocomplete="off" placeholder="请输入通知标题">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="messageList" lay-filter="List"></table>
+
+<script>
+    layui.use(['table'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+
+        table.render({
+            id: 'List',
+            elem: '#messageList',
+            url: '/ClubHub/Message/GetAll',
+            cols: [[
+                {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                {field: 'title', title: '通知标题', width: 200, align: 'center'},
+                {field: 'content', title: '通知内容', width: 500, align: 'center'},
+                {field: 'clubName', title: '发布社团', width: 150, align: 'center'},
+                {field: 'adminName', title: '发布人', width: 150, align: 'center'},
+                {
+                    field: 'enterData', title: '发布时间', width: 200, align: 'center', templet: function (res) {
+                        return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                    }
+                }
+            ]],
+            done: function () {
+                $("[data-field='id']").css('display', 'none');
+            },
+            page: true
+        });
+
+        var active = {
+            reload: function () {
+                table.reload('List', {
+                    page: {curr: 1},
+                    where: {Title: $('#messageTitle').val()}
+                }, 'data');
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>
+

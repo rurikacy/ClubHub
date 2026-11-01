@@ -1,0 +1,344 @@
+@using Repository.IRepository
+@{
+    ViewData["Title"] = "超级管理员控制台";
+    var userStats = ViewBag.UserStats as UserStatistics;
+    var orderStats = ViewBag.OrderStats as OrderStatistics;
+}
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <!-- 统计卡片 -->
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-username"></i> 总用户数
+                </div>
+                <div class="layui-card-body">
+                    <h2 class="dashboard-number">@(userStats?.TotalUsers ?? 0)</h2>
+                    <p class="dashboard-desc">
+                        管理员: @(userStats?.AdminCount ?? 0) | 成员: @(userStats?.MemberCount ?? 0)
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-form"></i> 订单总数
+                </div>
+                <div class="layui-card-body">
+                    <h2 class="dashboard-number">@(orderStats?.TotalCount ?? 0)</h2>
+                    <p class="dashboard-desc">
+                        普通: @(orderStats?.NormalOrderCount ?? 0) | 外卖: @(orderStats?.DeliveryOrderCount ?? 0)
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-rmb"></i> 订单总金额
+                </div>
+                <div class="layui-card-body">
+                    <h2 class="dashboard-number">¥@(orderStats?.TotalAmount.ToString("F2") ?? "0.00")</h2>
+                    <p class="dashboard-desc">
+                        已完成: @(orderStats?.CompletedCount ?? 0) 单
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="layui-col-md3">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-time"></i> 待处理订单
+                </div>
+                <div class="layui-card-body">
+                    <h2 class="dashboard-number text-warning">@(orderStats?.PendingCount ?? 0)</h2>
+                    <p class="dashboard-desc">
+                        处理中: @(orderStats?.ProcessingCount ?? 0) | 配送中: @(orderStats?.DeliveringCount ?? 0)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-row layui-col-space15">
+        <!-- 快捷入口 -->
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-app"></i> 快捷入口
+                </div>
+                <div class="layui-card-body">
+                    <div class="layui-row layui-col-space10">
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/SpAdmin/UserManagement" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-user"></i>
+                                <span>用户管理</span>
+                            </a>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/SpAdmin/OrderManagement" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-form"></i>
+                                <span>订单管理</span>
+                            </a>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/SpAdmin/RoleManagement" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-auz"></i>
+                                <span>角色管理</span>
+                            </a>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/Admin" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-username"></i>
+                                <span>管理员列表</span>
+                            </a>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/Club" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-group"></i>
+                                <span>社团管理</span>
+                            </a>
+                        </div>
+                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md3">
+                            <a href="/ClubHub/Member" class="quick-entry" data-ajax-update="#LAY_app_body" data-ajax="true">
+                                <i class="layui-icon layui-icon-friends"></i>
+                                <span>成员管理</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统信息 -->
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-about"></i> 系统信息
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table system-info-table">
+                        <tbody>
+                            <tr>
+                                <td>系统名称</td>
+                                <td>NFU ClubHub</td>
+                            </tr>
+                            <tr>
+                                <td>系统版本</td>
+                                <td>v2.0.0</td>
+                            </tr>
+                            <tr>
+                                <td>.NET版本</td>
+                                <td>.NET 8.0</td>
+                            </tr>
+                            <tr>
+                                <td>当前时间</td>
+                                <td id="currentTime">@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-row layui-col-space15">
+        <!-- 订单状态统计 -->
+        <div class="layui-col-md6">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-chart"></i> 订单状态分布
+                </div>
+                <div class="layui-card-body">
+                    <div id="orderStatusChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 订单类型统计 -->
+        <div class="layui-col-md6">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    <i class="layui-icon layui-icon-chart-screen"></i> 订单类型分布
+                </div>
+                <div class="layui-card-body">
+                    <div id="orderTypeChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-number {
+        font-size: 36px;
+        font-weight: 300;
+        color: #333;
+        margin: 10px 0;
+    }
+    
+    .dashboard-number.text-warning {
+        color: #FFB800;
+    }
+    
+    .dashboard-desc {
+        color: #999;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .quick-entry {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: #f8f8f8;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #666;
+        transition: all 0.3s;
+    }
+    
+    .quick-entry:hover {
+        background: #8B0101;
+        color: #fff;
+        text-decoration: none;
+    }
+    
+    .quick-entry i {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+    
+    .quick-entry span {
+        font-size: 14px;
+    }
+    
+    .system-info-table {
+        margin: 0;
+    }
+    
+    .system-info-table td {
+        border: none;
+        padding: 12px 15px;
+    }
+    
+    .system-info-table td:first-child {
+        color: #999;
+        width: 100px;
+    }
+</style>
+
+<script>
+    layui.use(['layer', 'element', 'echarts'], function () {
+        var $ = layui.$;
+        var element = layui.element;
+        var echarts = layui.echarts;
+
+        // 更新时间
+        setInterval(function () {
+            var now = new Date();
+            var timeStr = now.getFullYear() + '-' + 
+                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getDate()).padStart(2, '0') + ' ' + 
+                String(now.getHours()).padStart(2, '0') + ':' + 
+                String(now.getMinutes()).padStart(2, '0') + ':' + 
+                String(now.getSeconds()).padStart(2, '0');
+            $('#currentTime').text(timeStr);
+        }, 1000);
+
+        // 订单状态饼图
+        var orderStatusChart = echarts.init(document.getElementById('orderStatusChart'));
+        var orderStatusOption = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b}: {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                data: ['待处理', '处理中', '配送中', '已完成', '已取消']
+            },
+            series: [
+                {
+                    name: '订单状态',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 20,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: [
+                        { value: @(orderStats?.PendingCount ?? 0), name: '待处理', itemStyle: { color: '#FFB800' } },
+                        { value: @(orderStats?.ProcessingCount ?? 0), name: '处理中', itemStyle: { color: '#1E9FFF' } },
+                        { value: @(orderStats?.DeliveringCount ?? 0), name: '配送中', itemStyle: { color: '#5FB878' } },
+                        { value: @(orderStats?.CompletedCount ?? 0), name: '已完成', itemStyle: { color: '#009688' } },
+                        { value: @(orderStats?.CancelledCount ?? 0), name: '已取消', itemStyle: { color: '#FF5722' } }
+                    ]
+                }
+            ]
+        };
+        orderStatusChart.setOption(orderStatusOption);
+
+        // 订单类型饼图
+        var orderTypeChart = echarts.init(document.getElementById('orderTypeChart'));
+        var orderTypeOption = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b}: {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                data: ['普通订单', '外卖订单']
+            },
+            series: [
+                {
+                    name: '订单类型',
+                    type: 'pie',
+                    radius: '60%',
+                    data: [
+                        { value: @(orderStats?.NormalOrderCount ?? 0), name: '普通订单', itemStyle: { color: '#8B0101' } },
+                        { value: @(orderStats?.DeliveryOrderCount ?? 0), name: '外卖订单', itemStyle: { color: '#FF5722' } }
+                    ],
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+        orderTypeChart.setOption(orderTypeOption);
+
+        // 窗口大小改变时重绘图表
+        $(window).resize(function () {
+            orderStatusChart.resize();
+            orderTypeChart.resize();
+        });
+    });
+</script>

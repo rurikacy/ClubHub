@@ -1,0 +1,221 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+    <meta charset="UTF-8">
+    <title>登录 - NFU ClubHub</title>
+
+    <!-- 样式引入 -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css"/>
+    <link rel="stylesheet" href="~/js/layui-v2.5.5/layui/css/layui.css"/>
+    <link rel="stylesheet" href="~/css/modern.css"/>
+    <link rel="stylesheet" href="~/css/tailwind-output.css"/>
+
+    <style>
+
+        /* ===== 页面整体样式 ===== */
+        html, body {
+            height: 100%;
+            background-color: rgb(242, 242, 242);
+            color: rgb(102, 102, 102);
+        }
+
+        .layadmin-user-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100%;
+            padding: 100px 0;
+        }
+
+        /* ===== 登录主体 ===== */
+        .layadmin-user-login-main {
+            width: 375px;
+            margin: 0 auto;
+        }
+
+        /* ===== 头部（Logo + 标题） ===== */
+        .layadmin-user-login-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .layadmin-user-login-header h2 {
+            margin-bottom: 10px;
+            font-weight: 300;
+            font-size: 30px;
+            color: rgb(0, 0, 0);
+        }
+
+        .layadmin-user-login-header p {
+            font-weight: 300;
+            color: rgb(153, 153, 153);
+        }
+
+        .NFU_logo {
+            height: 12em;
+            margin-bottom: 24px;
+        }
+
+        /* ===== 输入框区域 ===== */
+        .layui-form-item {
+            position: relative;
+        }
+
+        .layui-input {
+            padding-left: 38px;
+        }
+
+        .layadmin-user-login-icon {
+            position: absolute;
+            left: 1px;
+            top: 1px;
+            width: 38px;
+            line-height: 36px;
+            text-align: center;
+            color: rgb(210, 210, 210);
+        }
+
+        /* ===== 页脚 ===== */
+        .layadmin-user-login-footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(0, 0, 0, .5);
+        }
+
+        /* ===== 主题色调整 ===== */
+        .layui-side-menu,
+        .layadmin-pagetabs .layui-tab-title li:after,
+        .layadmin-pagetabs .layui-tab-title li.layui-this:after,
+        .layui-layer-admin .layui-layer-title,
+        .layadmin-side-shrink .layui-side-menu .layui-nav > .layui-nav-item > .layui-nav-child {
+            background-color: #20222A !important;
+        }
+
+        .layui-nav-tree .layui-this,
+        .layui-nav-tree .layui-this > a,
+        .layui-nav-tree .layui-nav-child dd.layui-this,
+        .layui-nav-tree .layui-nav-child dd.layui-this a {
+            background-color: rgb(131, 1, 1) !important;
+        }
+
+        .layui-layout-admin .layui-logo {
+            background-color: rgb(32, 34, 42) !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layadmin-user-login" id="LAY-user-login">
+    <div class="layadmin-user-login-main">
+
+        <!-- 登录页标题部分 -->
+        <div class="layadmin-user-login-header">
+            <img src="~/images/NFU_logo.png" alt="NFU_logo" class="NFU_logo"/>
+            <h2>校园社团管理平台</h2>
+            <p>NFU ClubHub</p>
+        </div>
+
+        <!-- 登录表单部分 -->
+        <form class="layui-form" lay-filter="loginForm">
+            <div class="layui-form-item">
+                <label class="layadmin-user-login-icon layui-icon layui-icon-username" for="username"></label>
+                <input type="text" name="username" id="username" lay-verify="required" placeholder="学号/工号" class="layui-input">
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="password"></label>
+                <input type="password" name="password" id="password" lay-verify="required" placeholder="密码" class="layui-input">
+            </div>
+
+            <div class="layui-form-item">
+                <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="LAY-user-login-submit">登录</button>
+            </div>
+            
+            <div class="layui-form-item">
+                <button type="button" class="layui-btn layui-btn-fluid layui-btn-normal" id="btn-guest">游客进入</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="layadmin-user-login-footer">
+        <p>&copy; 2026 - NFU ClubHub - Xiao Dong</p>
+    </div>
+</div>
+
+<!-- 脚本 -->
+<script src="~/js/layui-v2.5.5/layui/layui.js"></script>
+<script>
+    layui.use(['layer', 'form'], function () {
+        var $ = layui.$, layer = layui.layer, form = layui.form;
+        form.render();
+
+        // 登录提交
+        form.on('submit(LAY-user-login-submit)', function (obj) {
+            $.ajax({
+                url: "/Home/CheckLogin",
+                type: 'post',
+                data: obj.field,
+                beforeSend: function () {
+                    this.layerIndex = layer.load(0, {shade: [0.5, '#393D49']});
+                },
+                success: function (data) {
+                    if (data.status === 'error') {
+                        layer.msg(data.msg, {icon: 5});
+                    } else {
+                        layer.msg(data.msg, {
+                            icon: 6,
+                            time: 1000
+                        }, function () {
+                            localStorage.setItem("token", data.token);
+                            location.href = '/Home/Index';
+                        });
+                    }
+                },
+                complete: function () {
+                    layer.close(this.layerIndex);
+                }
+            });
+            return false;
+        });
+
+        // 游客进入
+        $('#btn-guest').on('click', function () {
+            $.ajax({
+                url: "/Home/GuestLogin",
+                type: 'post',
+                beforeSend: function () {
+                    this.layerIndex = layer.load(0, {shade: [0.5, '#393D49']});
+                },
+                success: function (data) {
+                    if (data.status === 'error') {
+                        layer.msg(data.msg, {icon: 5});
+                    } else {
+                        layer.msg(data.msg, {
+                            icon: 6,
+                            time: 1000
+                        }, function () {
+                            localStorage.setItem("token", data.token);
+                            location.href = '/Home/Index';
+                        });
+                    }
+                },
+                complete: function () {
+                    layer.close(this.layerIndex);
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

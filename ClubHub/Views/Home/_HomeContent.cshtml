@@ -1,0 +1,84 @@
+@using Microsoft.AspNetCore.Http
+@{
+    Layout = null;
+    string userTypeStr = Context.Session.GetString("UserType");
+    string userName = Context.Session.GetString("UserName");
+    string roleName = userTypeStr switch
+    {
+        "0" => "管理员",
+        "1" => "社长",
+        "2" => "成员",
+        "3" => "游客",
+        _ => "未知身份"
+    };
+}
+
+<style>
+
+    .index_text_center {
+        padding-top: 10rem;
+        text-align: center;
+    }
+
+    .index_welcom_cn {
+        margin-bottom: 10px;
+        font-weight: 300;
+        font-size: 48px;
+        color: rgb(0, 0, 0);
+    }
+
+    .index_welcom_en {
+        margin-top: 24px;
+        font-weight: 300;
+        font-size: 16px;
+        color: rgb(131, 1, 1);
+    }
+
+    .index_NFU_logo {
+        height: 12em;
+        margin-bottom: 24px;
+    }
+
+    .user-role-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 24px;
+        margin-top: 24px;
+        background-color: #fff;
+        color: #333;
+        border-radius: 8px;
+        font-size: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: rgb(139, 1, 1);
+    }
+
+    .user-role-badge .divider {
+        margin: 0 10px;
+        color: #ccc;
+    }
+
+    .user-role-badge .role-text {
+        color: #666;
+        font-weight: 400;
+    }
+
+</style>
+
+<div class="index_text_center">
+    <img src="~/images/NFU_logo.png" alt="NFU_logo" class="index_NFU_logo"/>
+    <h1 class="index_welcom_cn">欢迎进入校园社团管理平台</h1>
+    <p class="index_welcom_en">Welcome to NFU ClubHub</p>
+    
+    <div class="user-role-badge">
+        <span class="user-name">@userName</span>
+        <span class="divider">|</span>
+        <span class="role-text">@roleName</span>
+    </div>
+</div>

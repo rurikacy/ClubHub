@@ -1,0 +1,504 @@
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>成员管理</cite></a><span lay-separator="">/</span>
+        <a><cite>成员信息管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        成员姓名：
+        <div class="layui-inline">
+            <input class="layui-input" name="memberName" id="memberName" autocomplete="off" placeholder="请输入成员姓名">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="memberList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+    {{# if(d.clubId && d.clubId > 0){ }}
+    <a class="layui-btn layui-btn-xs layui-btn-normal" style="color: white;" lay-event="assignDuty">分配部门</a>
+    <a class="layui-btn layui-btn-xs layui-btn-warm" style="color: white;" lay-event="removeFromClub">移出社团</a>
+    {{# } }}
+</script>
+
+@*分配部门弹窗*@
+<script type="text/template" id="assign_duty_box">
+    <form class="layui-form layui-form-pane" lay-filter="assignDutyFormFilter" style="padding:10px">
+        <input type="text" name="memberId" id="assign_memberId" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">成员姓名</label>
+            <div class="layui-input-block">
+                <input type="text" id="assign_memberName" readonly class="layui-input layui-disabled">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">选择部门</label>
+            <div class="layui-input-block">
+                <select name="dutyId" id="assign_dutyId" lay-verify="required">
+                    <option value="">请选择部门</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">职位</label>
+            <div class="layui-input-block">
+                <input type="radio" name="role" value="0" title="成员" checked>
+                <input type="radio" name="role" value="1" title="部长">
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="submitAssignForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+@*新增、编辑弹窗*@
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" lay-filter="addFormFilter" style="padding:10px">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">学号</label>
+            <div class="layui-input-block">
+                <input type="text" name="StudentId" id="box_studentId" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入学号">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-block">
+                <input type="text" name="Name" id="box_name" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入姓名">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <input type="radio" name="Sex" value="0" title="未知" checked>
+                <input type="radio" name="Sex" value="1" title="男">
+                <input type="radio" name="Sex" value="2" title="女">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-block">
+                <input type="text" name="PhoneNumber" id="box_phoneNumber" autocomplete="off" class="layui-input" placeholder="请输入手机号">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码</label>
+            <div class="layui-input-block">
+                <input type="text" name="Password" id="box_password" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入密码">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属社团</label>
+            <div class="layui-input-block">
+                <select name="ClubId" id="box_clubId">
+                    <option value="">无</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" id="submitForm" lay-submit lay-filter="submitForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+            var currentClubId = '@ViewBag.CurrentClubId';
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#memberList',
+                    url: '/ClubHub/Member/GetAll',
+                    title: '成员数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                            {field: 'studentId', title: '学号', width: 150, align: 'center'},
+                            {field: 'name', title: '姓名', width: 150, align: 'center'},
+                            {
+                                field: 'sex', title: '性别', width: 100, align: 'center', templet: function (res) {
+                                    return res.sex == 1 ? '男' : (res.sex == 2 ? '女' : '未知');
+                                }
+                            },
+                            {field: 'phoneNumber', title: '手机号', width: 150, align: 'center'},
+                            {
+                                field: 'clubName', title: '所属社团', width: 150, align: 'center', templet: function (res) {
+                                    return res.clubName || '无';
+                                }
+                            },
+                            {
+                                field: 'dutyName',
+                                title: '部门',
+                                width: 150,
+                                align: 'center',
+                                templet: function (res) {
+                                    if (res.dutyName) {
+                                        var badge = res.dutyRole == 1 ? '<span class="layui-badge layui-bg-orange">部长</span>' : '<span class="layui-badge layui-bg-blue">成员</span>';
+                                        return res.dutyName + ' ' + badge;
+                                    }
+                                    return '<span style="color: #999;">无部门</span>';
+                                }
+                            },
+                            {
+                                field: 'enterData', title: '加入时间', width: 200, align: 'center', templet: function (res) {
+                                    return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                                }
+                            },
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 300, align: 'center'}
+                        ]
+                    ],
+                    done: function () {
+                        $("[data-field='id']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+            initIndex();
+
+
+
+            function initForm(formObj, dataObj) {
+                // 加载社团列表
+                $.get('/ClubHub/Member/GetClubList', function (res) {
+                    var html = '<option value="">无</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            // 跳过后端返回的"无"选项，因为已经手动添加了
+                            if (item.id !== '') {
+                                html += '<option value="' + item.id + '">' + item.name + '</option>';
+                            }
+                        });
+                    }
+                    $("#box_clubId").html(html);
+
+                    if (currentClubId) {
+                        if (!!dataObj) {
+                            // 编辑模式：隐藏学号、密码、社团
+                            $("#box_studentId").parents(".layui-form-item").hide();
+                            $("#box_password").parents(".layui-form-item").hide();
+                            $("#box_clubId").parents(".layui-form-item").hide();
+                        } else {
+                            // 新增模式：锁定社团
+                            $("#box_clubId").val(currentClubId);
+                            $("#box_clubId").prop("disabled", true);
+                        }
+                    }
+
+                    if (!!dataObj) {
+                        $("#box_id").val(dataObj.id);
+                        $("#box_studentId").val(dataObj.studentId);
+                        $("#box_name").val(dataObj.name);
+                        $("input[name='Sex'][value='" + dataObj.sex + "']").prop("checked", true);
+                        $("#box_phoneNumber").val(dataObj.phoneNumber);
+                        $("#box_password").val(dataObj.password);
+                        $("#box_clubId").val(dataObj.clubId);
+                    }
+                    form.render();
+                });
+
+                form.on('submit(submitForm)',
+                    function (data) {
+                        var url = '/ClubHub/Member/Create';
+                        if (!!data.field.id && data.field.id != '0' && data.field.id != '') {
+                            url = '/ClubHub/Member/Edit';
+                        }
+
+                        var postData = {};
+                        if (url === '/ClubHub/Member/Create') {
+                            postData.StudentId = data.field.StudentId || '';
+                            postData.Name = data.field.Name || '';
+                            postData.Sex = parseInt(data.field.Sex) || 0;
+                            postData.PhoneNumber = data.field.PhoneNumber || '';
+                            postData.Password = data.field.Password || '';
+                            if (currentClubId) {
+                                postData.ClubId = parseInt(currentClubId);
+                            } else {
+                                // 如果选择"无"（空字符串），则不传递ClubId，让后端处理为null
+                                if (data.field.ClubId && data.field.ClubId !== '') {
+                                    postData.ClubId = parseInt(data.field.ClubId);
+                                }
+                            }
+                        } else {
+                            postData.Id = parseInt(data.field.id) || 0;
+                            postData.StudentId = data.field.StudentId || '';
+                            postData.Name = data.field.Name || '';
+                            postData.Sex = parseInt(data.field.Sex) || 0;
+                            postData.PhoneNumber = data.field.PhoneNumber || '';
+                            postData.Password = data.field.Password || '';
+                            if (currentClubId) {
+                                postData.ClubId = parseInt(currentClubId);
+                            } else {
+                                // 如果选择"无"（空字符串），则不传递ClubId，让后端处理为null
+                                if (data.field.ClubId && data.field.ClubId !== '') {
+                                    postData.ClubId = parseInt(data.field.ClubId);
+                                }
+                            }
+                        }
+
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: postData,
+                            dataType: "json",
+                            success: function (response) {
+                                var isSuccess = (response && (response.Msg || response.msg));
+                                var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                if (isSuccess) {
+                                    layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(formObj);
+                                    table.reload('List', {page: {curr: 1}}, 'data');
+                                } else {
+                                    layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                var errorMsg = "请求失败";
+                                if (XMLHttpRequest.responseText) {
+                                    try {
+                                        var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                        errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                    } catch (e) {
+                                        errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                    }
+                                }
+                                layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        });
+                        return false;
+                    });
+                form.render();
+                return false;
+            }
+
+            var active = {
+                reload: function () {
+                    table.reload('List', {
+                        page: {curr: 1},
+                        where: {
+                            Name: $('#memberName').val()
+                        }
+                    }, 'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加成员",
+                        type: 1,
+                        area: ['500px', '500px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) {
+                            $("#submitForm").click();
+                        },
+                        btn2: function (index, obj) {
+                            layer.close(index);
+                        },
+                        cancel: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                    initForm(addForm);
+                }
+            };
+
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    if (obj.event === 'del') {
+                        layer.confirm('确定要删除这个成员吗？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Member/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    success: function (response) {
+                                        var isSuccess = (response && (response.Msg || response.msg));
+                                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                        if (isSuccess) {
+                                            layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            table.reload('List', {page: {curr: 1}}, 'data');
+                                        } else {
+                                            layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                                        }
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var str = $('#add_box').html();
+                        var editForm = layer.open({
+                            title: "编辑成员",
+                            type: 1,
+                            area: ['500px', '500px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) {
+                                $("#submitForm").click();
+                            },
+                            btn2: function (index, obj) {
+                                layer.close(index);
+                            },
+                            cancel: function (index) {
+                                layer.close(index);
+                            }
+                        });
+                        initForm(editForm, data);
+                    }
+                    if (obj.event === 'assignDuty') {
+                        var str = $('#assign_duty_box').html();
+                        var assignForm = layer.open({
+                            title: "分配部门",
+                            type: 1,
+                            area: ['450px', '350px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) {
+                                $("#submitAssignForm").click();
+                            },
+                            btn2: function (index, obj) {
+                                layer.close(index);
+                            },
+                            cancel: function (index) {
+                                layer.close(index);
+                            }
+                        });
+                        initAssignForm(assignForm, data);
+                    }
+                    if (obj.event === 'removeFromClub') {
+                        layer.confirm('确定要将该成员移出社团吗？', function (index) {
+                            $.ajax({
+                                type: "POST",
+                                url: '/ClubHub/Member/RemoveFromClub',
+                                data: {id: data.id},
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List', {page: {curr: 1}}, 'data');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                },
+                                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                        });
+                    }
+                });
+
+            function initAssignForm(formObj, memberData) {
+                $("#assign_memberId").val(memberData.id);
+                $("#assign_memberName").val(memberData.name);
+
+                // 加载部门列表
+                $.get('/ClubHub/Member/GetDutyList', {clubId: memberData.clubId}, function (res) {
+                    var html = '<option value="">请选择部门</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#assign_dutyId").html(html);
+                    form.render();
+                });
+
+                form.on('submit(submitAssignForm)', function (data) {
+                    var postData = {
+                        memberId: parseInt(data.field.memberId) || 0,
+                        dutyId: parseInt(data.field.dutyId) || 0,
+                        role: parseInt(data.field.role) || 0
+                    };
+
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Member/AssignDuty',
+                        data: postData,
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(formObj);
+                                table.reload('List', {page: {curr: 1}}, 'data');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            var errorMsg = "请求失败";
+                            if (XMLHttpRequest.responseText) {
+                                try {
+                                    var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                    errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                } catch (e) {
+                                    errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                }
+                            }
+                            layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                    return false;
+                });
+                form.render();
+            }
+
+        });
+</script>
+

@@ -1,0 +1,131 @@
+@{
+    Layout = null;
+}
+@model Repository.DbEntity.T_Club
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>社团信息管理</cite></a>
+    </div>
+</div>
+
+@*社团信息表单*@
+<form class="layui-form" action="" style="padding: 20px; width: 70%;">
+    <div class="layui-form-item">
+        <label class="layui-form-label" style="width: 100px;">社团名称</label>
+        <div class="layui-input-block" style="margin-left: 130px;">
+            <input type="text" name="clubName" id="clubName" class="layui-input" value="@Model?.Name" readonly style="background-color: #f2f2f2; cursor: not-allowed;">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label" style="width: 100px;">成立时间</label>
+        <div class="layui-input-block" style="margin-left: 130px;">
+            <input type="text" name="enterData" id="enterData" class="layui-input" value="@(Model?.EnterData.ToString("yyyy-MM-dd HH:mm:ss"))" readonly style="background-color: #f2f2f2; cursor: not-allowed;">
+        </div>
+    </div>
+    <div class="layui-form-item layui-form-text">
+        <label class="layui-form-label" style="width: 100px;">社团介绍</label>
+        <div class="layui-input-block" style="margin-left: 130px; position: relative;">
+            <textarea name="description" id="description" placeholder="请输入社团介绍（最多200字）" class="layui-textarea" rows="6" maxlength="200">@Model?.Description</textarea>
+            <div id="charCount" style="position: absolute; left: 0; bottom: -25px; color: #666; font-size: 12px;">
+                <span id="currentCount">0</span>/200
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item" style="margin-top: 40px;">
+        <div class="layui-input-block" style="margin-left: 130px;">
+            <button type="button" class="layui-btn" id="submitBtn" style="background-color: #8B0000;">保存修改</button>
+        </div>
+    </div>
+</form>
+
+<script>
+    layui.use(['form', 'layer'], function () {
+        var form = layui.form;
+        var layer = layui.layer;
+        var $ = layui.$;
+
+        form.render();
+
+        // 初始化字数统计
+        var maxLength = 200;
+        var $description = $('#description');
+        var $currentCount = $('#currentCount');
+
+        function updateCharCount() {
+            var currentLength = $description.val().length;
+            $currentCount.text(currentLength);
+
+            // 超过限制时显示红色
+            if (currentLength > maxLength) {
+                $currentCount.css('color', 'red');
+            } else if (currentLength >= maxLength * 0.9) {
+                $currentCount.css('color', 'orange');
+            } else {
+                $currentCount.css('color', '#666');
+            }
+        }
+
+        // 页面加载时初始化字数
+        updateCharCount();
+
+        // 监听输入事件
+        $description.on('input', function () {
+            updateCharCount();
+        });
+
+        // 点击保存按钮
+        $('#submitBtn').on('click', function () {
+            var description = $description.val();
+
+            // 检查字数限制
+            if (description.length > maxLength) {
+                layer.msg('社团介绍不能超过' + maxLength + '字', {icon: 5, time: 2000});
+                return;
+            }
+
+            // 弹窗确认
+            layer.confirm('确认要保存修改吗？', {
+                icon: 3,
+                title: '提示',
+                btn: ['确认', '取消']
+            }, function (index) {
+                layer.close(index);
+
+                // 提交数据
+                $.ajax({
+                    type: "POST",
+                    url: '/ClubHub/Club/UpdateDescription',
+                    data: {
+                        description: description
+                    },
+                    dataType: "json",
+                    success: function (response) {
+                        var isSuccess = (response && (response.Msg || response.msg));
+                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                        if (isSuccess) {
+                            layer.msg(message, {icon: 6, time: 2000, shade: 0.08});
+                        } else {
+                            layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        var errorMsg = "请求失败";
+                        if (XMLHttpRequest.responseText) {
+                            try {
+                                var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                            } catch (e) {
+                                errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                            }
+                        }
+                        layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                    }
+                });
+            });
+        });
+    });
+</script>

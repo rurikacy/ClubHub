@@ -1,0 +1,123 @@
+/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* Provide sufficient contrast against white background */
+a {
+    color: #0366d6;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.border-top {
+    border-top: 1px solid #e5e5e5;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+    font-size: 1rem;
+    line-height: inherit;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px; /* Vertically center the text there */
+}
+
+/* 全局覆盖layui按钮样式 */
+.layui-btn {
+    background-color: rgb(139, 1, 1) !important;
+    border-color: rgb(139, 1, 1) !important;
+}
+
+.layui-btn:hover {
+    background-color: rgb(119, 1, 1) !important;
+    border-color: rgb(119, 1, 1) !important;
+}
+
+/* 全局覆盖layui单选按钮选中状态样式 */
+.layui-form-radio > i:hover,
+.layui-form-radioed > i {
+    color: rgb(139, 1, 1) !important;
+}
+
+/* 设置layui logo文字颜色 */
+.layui-layout-admin .layui-logo {
+    color: rgb(211, 77, 77) !important;
+}
+
+/* 设置侧边栏一级目录鼠标悬停颜色 *//*
+.layui-side .layui-nav-tree .layui-nav-item > a:hover {
+  background-color: rgb(131, 1, 1) !important;
+}/*
+
+/* 设置侧边栏选中状态的竖线颜色 */
+.layui-side .layui-nav-tree .layui-nav-bar {
+    background-color: rgb(131, 1, 1) !important;
+}
+
+/* 设置侧边栏二级目录被选择的颜色 */
+.layui-side .layui-nav-tree .layui-nav-child dd.layui-this a,
+.layui-side .layui-nav-tree .layui-nav-child dd a.active {
+    background-color: rgb(211, 77, 77) !important;
+    color: white !important;
+}
+
+/* 覆盖layui默认的侧边栏选中状态样式 */
+.layui-nav-tree .layui-nav-child dd.layui-this,
+.layui-nav-tree .layui-nav-child dd.layui-this a,
+.layui-nav-tree .layui-this,
+.layui-nav-tree .layui-this > a,
+.layui-nav-tree .layui-this > a:hover {
+    background-color: rgb(211, 77, 77) !important;
+    color: #fff !important;
+}

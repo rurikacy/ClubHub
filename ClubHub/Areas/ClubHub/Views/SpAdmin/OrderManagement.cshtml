@@ -1,0 +1,514 @@
+@{
+    ViewData["Title"] = "订单管理";
+}
+
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">
+            <i class="layui-icon layui-icon-form"></i> 订单管理
+        </div>
+        <div class="layui-card-body">
+            <!-- 统计卡片 -->
+            <div class="layui-row layui-col-space10" style="margin-bottom: 20px;">
+                <div class="layui-col-md2">
+                    <div class="order-stat-card pending">
+                        <div class="stat-number" id="pendingCount">0</div>
+                        <div class="stat-label">待处理</div>
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="order-stat-card processing">
+                        <div class="stat-number" id="processingCount">0</div>
+                        <div class="stat-label">处理中</div>
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="order-stat-card delivering">
+                        <div class="stat-number" id="deliveringCount">0</div>
+                        <div class="stat-label">配送中</div>
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="order-stat-card completed">
+                        <div class="stat-number" id="completedCount">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="order-stat-card cancelled">
+                        <div class="stat-number" id="cancelledCount">0</div>
+                        <div class="stat-label">已取消</div>
+                    </div>
+                </div>
+                <div class="layui-col-md2">
+                    <div class="order-stat-card total">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">订单总数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="layui-form layui-row layui-col-space10">
+                <div class="layui-col-md2">
+                    <input type="text" id="keyword" placeholder="订单号/收货人" class="layui-input">
+                </div>
+                <div class="layui-col-md2">
+                    <select id="orderType">
+                        <option value="">全部类型</option>
+                        <option value="0">普通订单</option>
+                        <option value="1">外卖订单</option>
+                    </select>
+                </div>
+                <div class="layui-col-md2">
+                    <select id="orderStatus">
+                        <option value="">全部状态</option>
+                        <option value="0">待处理</option>
+                        <option value="1">处理中</option>
+                        <option value="2">配送中</option>
+                        <option value="3">已完成</option>
+                        <option value="4">已取消</option>
+                    </select>
+                </div>
+                <div class="layui-col-md2">
+                    <input type="text" id="startTime" placeholder="开始时间" class="layui-input" autocomplete="off">
+                </div>
+                <div class="layui-col-md2">
+                    <input type="text" id="endTime" placeholder="结束时间" class="layui-input" autocomplete="off">
+                </div>
+                <div class="layui-col-md2">
+                    <button class="layui-btn layui-btn-normal" id="btnSearch">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button class="layui-btn layui-btn-primary" id="btnReset">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+
+            <!-- 工具栏 -->
+            <div class="layui-btn-group" style="margin: 15px 0;">
+                <button class="layui-btn" id="btnRefresh">
+                    <i class="layui-icon layui-icon-refresh-3"></i> 刷新
+                </button>
+            </div>
+
+            <!-- 数据表格 -->
+            <table class="layui-hide" id="orderTable" lay-filter="orderTable"></table>
+        </div>
+    </div>
+</div>
+
+<!-- 操作按钮模板 -->
+<script type="text/html" id="toolbarTpl">
+    <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="detail">详情</a>
+    {{# if(d.status !== 3 && d.status !== 4){ }}
+        <a class="layui-btn layui-btn-xs" lay-event="updateStatus">更新状态</a>
+    {{# } }}
+    <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">删除</a>
+</script>
+
+<!-- 订单类型模板 -->
+<script type="text/html" id="orderTypeTpl">
+    {{# if(d.orderType === 0){ }}
+        <span class="layui-badge layui-bg-blue">普通</span>
+    {{# } else { }}
+        <span class="layui-badge layui-bg-orange">外卖</span>
+    {{# } }}
+</script>
+
+<!-- 订单状态模板 -->
+<script type="text/html" id="orderStatusTpl">
+    {{# if(d.status === 0){ }}
+        <span class="layui-badge layui-bg-yellow">待处理</span>
+    {{# } else if(d.status === 1){ }}
+        <span class="layui-badge layui-bg-blue">处理中</span>
+    {{# } else if(d.status === 2){ }}
+        <span class="layui-badge layui-bg-green">配送中</span>
+    {{# } else if(d.status === 3){ }}
+        <span class="layui-badge layui-bg-gray">已完成</span>
+    {{# } else if(d.status === 4){ }}
+        <span class="layui-badge layui-bg-black">已取消</span>
+    {{# } }}
+</script>
+
+<!-- 金额模板 -->
+<script type="text/html" id="amountTpl">
+    <span style="color: #8B0101; font-weight: bold;">¥{{ d.totalAmount.toFixed(2) }}</span>
+</script>
+
+<!-- 订单详情弹窗 -->
+<div id="orderDetailModal" style="display: none;">
+    <div style="padding: 20px;">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md6">
+                <h4>订单信息</h4>
+                <table class="layui-table detail-table">
+                    <tr><td>订单编号</td><td id="detailOrderNo"></td></tr>
+                    <tr><td>订单类型</td><td id="detailOrderType"></td></tr>
+                    <tr><td>订单状态</td><td id="detailStatus"></td></tr>
+                    <tr><td>订单金额</td><td id="detailAmount"></td></tr>
+                    <tr><td>配送费用</td><td id="detailDeliveryFee"></td></tr>
+                    <tr><td>下单时间</td><td id="detailOrderTime"></td></tr>
+                    <tr><td>备注</td><td id="detailRemark"></td></tr>
+                </table>
+            </div>
+            <div class="layui-col-md6">
+                <h4>收货信息</h4>
+                <table class="layui-table detail-table">
+                    <tr><td>收货人</td><td id="detailReceiverName"></td></tr>
+                    <tr><td>联系电话</td><td id="detailReceiverPhone"></td></tr>
+                    <tr><td>收货地址</td><td id="detailReceiverAddress"></td></tr>
+                    <tr><td>配送方式</td><td id="detailDeliveryType"></td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <h4 style="margin-top: 20px;">商品明细</h4>
+        <table class="layui-table">
+            <thead>
+                <tr>
+                    <th>商品名称</th>
+                    <th>单价</th>
+                    <th>数量</th>
+                    <th>小计</th>
+                </tr>
+            </thead>
+            <tbody id="detailItems"></tbody>
+        </table>
+        
+        <h4 style="margin-top: 20px;">状态日志</h4>
+        <table class="layui-table">
+            <thead>
+                <tr>
+                    <th>时间</th>
+                    <th>原状态</th>
+                    <th>新状态</th>
+                    <th>操作人</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody id="detailLogs"></tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .order-stat-card {
+        text-align: center;
+        padding: 15px;
+        border-radius: 4px;
+        background: #f8f8f8;
+    }
+    
+    .order-stat-card.pending { border-top: 3px solid #FFB800; }
+    .order-stat-card.processing { border-top: 3px solid #1E9FFF; }
+    .order-stat-card.delivering { border-top: 3px solid #5FB878; }
+    .order-stat-card.completed { border-top: 3px solid #009688; }
+    .order-stat-card.cancelled { border-top: 3px solid #FF5722; }
+    .order-stat-card.total { border-top: 3px solid #8B0101; }
+    
+    .order-stat-card .stat-number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .order-stat-card .stat-label {
+        color: #999;
+        font-size: 14px;
+    }
+    
+    .detail-table td:first-child {
+        width: 100px;
+        color: #999;
+        background: #f8f8f8;
+    }
+</style>
+
+<script>
+    layui.use(['table', 'form', 'layer', 'laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        var laydate = layui.laydate;
+        var $ = layui.$;
+
+        // 初始化日期选择器
+        laydate.render({
+            elem: '#startTime',
+            type: 'datetime'
+        });
+        
+        laydate.render({
+            elem: '#endTime',
+            type: 'datetime'
+        });
+
+        // 加载统计数据
+        function loadStatistics() {
+            $.ajax({
+                url: '/ClubHub/SpAdmin/GetOrderStatistics',
+                type: 'GET',
+                success: function (res) {
+                    if (res.msg && res.data) {
+                        $('#pendingCount').text(res.data.pendingCount);
+                        $('#processingCount').text(res.data.processingCount);
+                        $('#deliveringCount').text(res.data.deliveringCount);
+                        $('#completedCount').text(res.data.completedCount);
+                        $('#cancelledCount').text(res.data.cancelledCount);
+                        $('#totalCount').text(res.data.totalCount);
+                    }
+                }
+            });
+        }
+        
+        loadStatistics();
+
+        // 渲染表格
+        var tableIns = table.render({
+            elem: '#orderTable',
+            url: '/ClubHub/SpAdmin/GetOrders',
+            method: 'get',
+            page: true,
+            limit: 10,
+            limits: [10, 20, 50, 100],
+            cols: [[
+                { type: 'checkbox', width: 50 },
+                { field: 'orderNo', title: '订单编号', width: 180, sort: true },
+                { field: 'orderType', title: '类型', width: 80, templet: '#orderTypeTpl' },
+                { field: 'status', title: '状态', width: 90, templet: '#orderStatusTpl' },
+                { field: 'totalAmount', title: '金额', width: 100, templet: '#amountTpl' },
+                { field: 'receiverName', title: '收货人', width: 100 },
+                { field: 'receiverPhone', title: '联系电话', width: 130 },
+                { field: 'receiverAddress', title: '收货地址', minWidth: 200 },
+                { field: 'orderTime', title: '下单时间', width: 160, sort: true },
+                { title: '操作', width: 180, toolbar: '#toolbarTpl', fixed: 'right' }
+            ]],
+            parseData: function (res) {
+                return {
+                    "code": res.code,
+                    "msg": res.message,
+                    "count": res.count,
+                    "data": res.data
+                };
+            }
+        });
+
+        // 搜索
+        $('#btnSearch').on('click', function () {
+            var keyword = $('#keyword').val();
+            var orderType = $('#orderType').val();
+            var status = $('#orderStatus').val();
+            var startTime = $('#startTime').val();
+            var endTime = $('#endTime').val();
+            
+            tableIns.reload({
+                where: {
+                    keyword: keyword,
+                    orderType: orderType,
+                    status: status,
+                    startTime: startTime,
+                    endTime: endTime
+                },
+                page: {
+                    curr: 1
+                }
+            });
+        });
+
+        // 重置
+        $('#btnReset').on('click', function () {
+            $('#keyword').val('');
+            $('#orderType').val('');
+            $('#orderStatus').val('');
+            $('#startTime').val('');
+            $('#endTime').val('');
+            form.render('select');
+            
+            tableIns.reload({
+                where: {},
+                page: {
+                    curr: 1
+                }
+            });
+        });
+
+        // 刷新
+        $('#btnRefresh').on('click', function () {
+            tableIns.reload();
+            loadStatistics();
+        });
+
+        // 状态映射
+        var statusMap = {
+            0: '待处理',
+            1: '处理中',
+            2: '配送中',
+            3: '已完成',
+            4: '已取消'
+        };
+
+        // 监听工具条
+        table.on('tool(orderTable)', function (obj) {
+            var data = obj.data;
+            
+            if (obj.event === 'detail') {
+                // 查看详情
+                $.ajax({
+                    url: '/ClubHub/SpAdmin/GetOrderDetail',
+                    type: 'GET',
+                    data: { id: data.id },
+                    success: function (res) {
+                        if (res.msg) {
+                            var order = res.data.order;
+                            var items = res.data.items;
+                            var logs = res.data.logs;
+                            
+                            // 填充订单信息
+                            $('#detailOrderNo').text(order.orderNo);
+                            $('#detailOrderType').html(order.orderType === 0 ? 
+                                '<span class="layui-badge layui-bg-blue">普通订单</span>' : 
+                                '<span class="layui-badge layui-bg-orange">外卖订单</span>');
+                            $('#detailStatus').html('<span class="layui-badge">' + statusMap[order.status] + '</span>');
+                            $('#detailAmount').html('<span style="color: #8B0101; font-weight: bold;">¥' + order.totalAmount.toFixed(2) + '</span>');
+                            $('#detailDeliveryFee').text(order.deliveryFee ? '¥' + order.deliveryFee.toFixed(2) : '-');
+                            $('#detailOrderTime').text(order.orderTime);
+                            $('#detailRemark').text(order.remark || '-');
+                            
+                            // 填充收货信息
+                            $('#detailReceiverName').text(order.receiverName || '-');
+                            $('#detailReceiverPhone').text(order.receiverPhone || '-');
+                            $('#detailReceiverAddress').text(order.receiverAddress || '-');
+                            $('#detailDeliveryType').text(order.deliveryType === 1 ? '配送' : '自提');
+                            
+                            // 填充商品明细
+                            var itemsHtml = '';
+                            if (items && items.length > 0) {
+                                items.forEach(function(item) {
+                                    itemsHtml += '<tr>' +
+                                        '<td>' + item.productName + '</td>' +
+                                        '<td>¥' + item.unitPrice.toFixed(2) + '</td>' +
+                                        '<td>' + item.quantity + '</td>' +
+                                        '<td>¥' + item.subTotal.toFixed(2) + '</td>' +
+                                        '</tr>';
+                                });
+                            } else {
+                                itemsHtml = '<tr><td colspan="4" style="text-align: center;">暂无商品明细</td></tr>';
+                            }
+                            $('#detailItems').html(itemsHtml);
+                            
+                            // 填充状态日志
+                            var logsHtml = '';
+                            if (logs && logs.length > 0) {
+                                logs.forEach(function(log) {
+                                    logsHtml += '<tr>' +
+                                        '<td>' + log.createTime + '</td>' +
+                                        '<td>' + statusMap[log.oldStatus] + '</td>' +
+                                        '<td>' + statusMap[log.newStatus] + '</td>' +
+                                        '<td>' + (log.operatorName || '-') + '</td>' +
+                                        '<td>' + (log.remark || '-') + '</td>' +
+                                        '</tr>';
+                                });
+                            } else {
+                                logsHtml = '<tr><td colspan="5" style="text-align: center;">暂无状态日志</td></tr>';
+                            }
+                            $('#detailLogs').html(logsHtml);
+                            
+                            layer.open({
+                                type: 1,
+                                title: '订单详情',
+                                area: ['900px', '600px'],
+                                content: $('#orderDetailModal')
+                            });
+                        } else {
+                            layer.msg(res.message || '获取详情失败', { icon: 2 });
+                        }
+                    },
+                    error: function () {
+                        layer.msg('获取详情失败', { icon: 2 });
+                    }
+                });
+            } else if (obj.event === 'updateStatus') {
+                // 更新状态
+                var statusOptions = '';
+                for (var key in statusMap) {
+                    if (parseInt(key) !== data.status) {
+                        statusOptions += '<option value="' + key + '">' + statusMap[key] + '</option>';
+                    }
+                }
+                
+                layer.open({
+                    type: 1,
+                    title: '更新订单状态',
+                    area: ['400px', '250px'],
+                    content: '<div style="padding: 20px;">' +
+                        '<div class="layui-form-item">' +
+                        '<label class="layui-form-label">新状态</label>' +
+                        '<div class="layui-input-block">' +
+                        '<select id="newStatus" class="layui-input">' + statusOptions + '</select>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="layui-form-item">' +
+                        '<label class="layui-form-label">备注</label>' +
+                        '<div class="layui-input-block">' +
+                        '<textarea id="statusRemark" class="layui-textarea" placeholder="请输入备注（可选）"></textarea>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>',
+                    btn: ['确定', '取消'],
+                    yes: function (index, layero) {
+                        var newStatus = $('#newStatus').val();
+                        var remark = $('#statusRemark').val();
+                        
+                        $.ajax({
+                            url: '/ClubHub/SpAdmin/UpdateOrderStatus',
+                            type: 'POST',
+                            data: {
+                                orderId: data.id,
+                                newStatus: newStatus,
+                                remark: remark
+                            },
+                            success: function (res) {
+                                if (res.msg) {
+                                    layer.msg('状态更新成功', { icon: 1 });
+                                    layer.close(index);
+                                    tableIns.reload();
+                                    loadStatistics();
+                                } else {
+                                    layer.msg(res.message || '状态更新失败', { icon: 2 });
+                                }
+                            },
+                            error: function () {
+                                layer.msg('状态更新失败', { icon: 2 });
+                            }
+                        });
+                    }
+                });
+            } else if (obj.event === 'delete') {
+                // 删除
+                layer.confirm('确定要删除该订单吗？此操作不可恢复！', function (index) {
+                    $.ajax({
+                        url: '/ClubHub/SpAdmin/DeleteOrder',
+                        type: 'POST',
+                        data: { id: data.id },
+                        success: function (res) {
+                            if (res.msg) {
+                                layer.msg('删除成功', { icon: 1 });
+                                tableIns.reload();
+                                loadStatistics();
+                            } else {
+                                layer.msg(res.message || '删除失败', { icon: 2 });
+                            }
+                        },
+                        error: function () {
+                            layer.msg('删除失败', { icon: 2 });
+                        }
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+    });
+</script>

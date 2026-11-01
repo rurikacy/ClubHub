@@ -1,0 +1,616 @@
+@{
+    Layout = null;
+}
+
+<style>
+    /* 隐藏laydate时间选择器中的秒选择 */
+    .layui-laydate-content .laydate-time-list > li:last-child {
+        display: none !important;
+    }
+    .layui-laydate-content .laydate-time-list {
+        padding-right: 0 !important;
+    }
+    .layui-laydate-content .laydate-time-list > li {
+        width: 50% !important;
+    }
+</style>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>活动管理</cite></a><span lay-separator="">/</span>
+        <a><cite>社团活动管理</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        <span>活动标题：</span>
+        <div class="layui-inline">
+            <input class="layui-input" name="activeTitle" id="activeTitle" autocomplete="off" placeholder="请输入活动标题">
+        </div>
+        <span id="clubFilterLabel">所属社团：</span>
+        <div class="layui-inline" id="clubFilterSelect">
+            <select name="clubIdFilter" id="clubIdFilter" class="layui-input" style="width: 150px;">
+                <option value="">全部社团</option>
+            </select>
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="activeList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    {{# var now = new Date(); }}
+    {{# var endTime = d.endTime ? new Date(d.endTime) : null; }}
+    {{# if(d.status === 1){ }}
+    <span class="layui-badge" style="background-color: #ff5722;">活动已取消</span>
+    <span style="color: #999; font-size: 12px; display: block; margin-top: 5px;">{{d.cancelReason || '报名人数不足'}}</span>
+    {{# } else if(endTime && now > endTime){ }}
+    <span class="layui-badge layui-bg-gray">活动已结束</span>
+    {{# } else { }}
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+    {{# } }}
+</script>
+
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" style="padding:10px" lay-filter="addFormFilter">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属社团</label>
+            <div class="layui-input-block">
+                <select name="ClubId" id="box_clubId" lay-verify="required">
+                    <option value="">请选择社团</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <label class="layui-form-label">发布人ID</label>
+            <div class="layui-input-block">
+                <input type="number" name="AdminId" id="box_adminId" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动标题</label>
+            <div class="layui-input-block">
+                <input type="text" name="Title" id="box_title" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动内容</label>
+            <div class="layui-input-block">
+                <textarea name="Content" id="box_content" lay-verify="required" class="layui-textarea" style="min-height: 100px;"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">活动地点</label>
+            <div class="layui-input-block">
+                <input type="text" name="Place" id="box_place" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入活动地点" maxlength="50">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">最低人数</label>
+            <div class="layui-input-block">
+                <input type="number" name="MinParticipants" id="box_minParticipants" autocomplete="off" class="layui-input" placeholder="请输入最低开设人数（0表示不限制）" min="0">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="StartTime" id="box_startTime" lay-verify="required" autocomplete="off" class="layui-input" placeholder="yyyy-MM-dd HH:mm">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">结束时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="EndTime" id="box_endTime" lay-verify="required" autocomplete="off" class="layui-input" placeholder="yyyy-MM-dd HH:mm">
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form', 'laydate'], function () {
+        var $ = layui.$;
+        var currentClubId = '@ViewBag.CurrentClubId';
+        var currentUserId = '@ViewBag.CurrentUserId';
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+
+        function initIndex() {
+            table.render({
+                id: 'List',
+                elem: '#activeList',
+                url: '/ClubHub/Active/GetAll',
+                cols: [[
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                    {field: 'title', title: '活动标题', width: 200, align: 'center'},
+                    {field: 'content', title: '活动内容', width: 250, align: 'center'},
+                    {field: 'place', title: '活动地点', width: 150, align: 'center'},
+                    {field: 'clubName', title: '发布社团', width: 150, align: 'center'},
+                    {
+                        field: 'startTime', title: '开始时间', width: 150, align: 'center', templet: function (res) {
+                            return res.startTime ? formatDateTimeMinute(res.startTime) : '';
+                        }
+                    },
+                    {
+                        field: 'endTime', title: '结束时间', width: 150, align: 'center', templet: function (res) {
+                            return res.endTime ? formatDateTimeMinute(res.endTime) : '';
+                        }
+                    },
+                    {
+                        field: 'status', title: '活动状态', width: 100, align: 'center', templet: function (d) {
+                            // 优先检查是否已取消
+                            if (d.status === 1) {
+                                return '<span class="layui-badge" style="background-color: #ff5722;">已取消</span>';
+                            }
+                            var now = new Date();
+                            var startTime = d.startTime ? new Date(d.startTime) : null;
+                            var endTime = d.endTime ? new Date(d.endTime) : null;
+                            if (endTime && now > endTime) {
+                                return '<span class="layui-badge layui-bg-gray">已结束</span>';
+                            } else if (startTime && now >= startTime) {
+                                return '<span class="layui-badge layui-bg-green">正在进行</span>';
+                            } else {
+                                return '<span class="layui-badge layui-bg-blue">未开始</span>';
+                            }
+                        }
+                    },
+                    {
+                        field: 'joinNum', title: '报名人数', width: 150, align: 'center', templet: function (d) {
+                            var minParticipants = d.minParticipants || 0;
+                            var joinNum = d.joinNum || 0;
+                            var html = joinNum;
+                            if (minParticipants > 0) {
+                                var isEnough = joinNum >= minParticipants;
+                                var color = isEnough ? '#009688' : '#ff5722';
+                                var statusText = isEnough ? '✓' : '✗';
+                                html += ' <span style="color: ' + color + '; font-weight: bold;">(' + statusText + ' ' + joinNum + '/' + minParticipants + ')</span>';
+                            }
+                            html += ' <a class="layui-btn layui-btn-xs" lay-event="viewMembers" style="background-color: rgb(211, 77, 77); color: white; margin-left:5px; padding: 0 5px;"><i class="layui-icon layui-icon-form"></i></a>';
+                            return html;
+                        }
+                    },
+                    {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 200, align: 'center'}
+                ]],
+                done: function () {
+                    $("[data-field='id']").css('display', 'none');
+                },
+                page: true
+            });
+        }
+
+        initIndex();
+
+        // 加载社团列表用于筛选（仅超级管理员需要）
+        if (!currentClubId) {
+            $.get('/ClubHub/Active/GetClubList', function (res) {
+                var html = '<option value="">全部社团</option>';
+                if (res && res.length > 0) {
+                    $.each(res, function (i, item) {
+                        html += '<option value="' + item.id + '">' + item.name + '</option>';
+                    });
+                }
+                $("#clubIdFilter").html(html);
+                form.render('select');
+            });
+        } else {
+            // 社团管理员隐藏社团筛选
+            $("#clubFilterLabel").hide();
+            $("#clubFilterSelect").hide();
+        }
+
+        // 格式化日期为 yyyy-MM-dd HH:mm 格式（用于表格显示）
+        function formatDateTimeMinute(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            var year = date.getFullYear();
+            var month = ('0' + (date.getMonth() + 1)).slice(-2);
+            var day = ('0' + date.getDate()).slice(-2);
+            var hours = ('0' + date.getHours()).slice(-2);
+            var minutes = ('0' + date.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+        }
+
+        // 格式化日期为 yyyy-MM-dd HH:mm 格式（用于表单回填）
+        function formatDateTime(dateStr) {
+            return formatDateTimeMinute(dateStr);
+        }
+
+        function initForm(formObj, dataObj) {
+            // 加载社团列表
+            $.get('/ClubHub/Active/GetClubList', function (res) {
+                var html = '<option value="">请选择社团</option>';
+                if (res && res.length > 0) {
+                    $.each(res, function (i, item) {
+                        html += '<option value="' + item.id + '">' + item.name + '</option>';
+                    });
+                }
+                $("#box_clubId").html(html);
+
+                // Auto-fill and hide for Club Admin
+                if (currentClubId) {
+                    $("#box_clubId").closest(".layui-form-item").hide();
+                    $("#box_clubId").val(currentClubId);
+                }
+
+                if (!!dataObj) {
+                    $("#box_id").val(dataObj.id);
+                    $("#box_clubId").val(dataObj.clubId);
+                    $("#box_adminId").val(dataObj.adminId);
+                    $("#box_title").val(dataObj.title);
+                    $("#box_content").val(dataObj.content);
+                    $("#box_place").val(dataObj.place);
+                    $("#box_minParticipants").val(dataObj.minParticipants || 0);
+                    $("#box_startTime").val(formatDateTime(dataObj.startTime));
+                    $("#box_endTime").val(formatDateTime(dataObj.endTime));
+                } else {
+                    if (currentClubId) $("#box_clubId").val(currentClubId);
+                    if (currentUserId) $("#box_adminId").val(currentUserId);
+                    $("#box_minParticipants").val(0);
+                }
+
+                form.render('select');
+            });
+            
+            // 初始化日期选择器
+            laydate.render({
+                elem: '#box_startTime',
+                type: 'datetime',
+                format: 'yyyy-MM-dd HH:mm',
+                btns: ['clear', 'confirm']
+            });
+            laydate.render({
+                elem: '#box_endTime',
+                type: 'datetime',
+                format: 'yyyy-MM-dd HH:mm',
+                btns: ['clear', 'confirm']
+            });
+            
+            form.render();
+        }
+
+        var active = {
+            reload: function () {
+                table.reload('List', {
+                    page: {curr: 1},
+                    where: {
+                        Title: $('#activeTitle').val(),
+                        ClubId: $('#clubIdFilter').val() || null
+                    }
+                }, 'data');
+            },
+            add: function () {
+                var str = $('#add_box').html();
+                var addForm = layer.open({
+                    title: "添加活动",
+                    type: 1,
+                    area: ['600px', '550px'],
+                    content: str,
+                    resize: true,
+                    scrollbar: false,
+                    fixed: false,
+                    btn: ['确定', '取消'],
+                    btnAlign: 'c',
+                    yes: function (index, layero) {
+                        // 触发表单提交
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index, obj) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        // 修改确定按钮样式为暗红底白字
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        // 绑定表单提交事件
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            var formData = $(this).serialize();
+                            // 触发表单验证
+                            var startTime = $('#box_startTime').val();
+                            var endTime = $('#box_endTime').val();
+                            var title = $('#box_title').val();
+                            var place = $('#box_place').val();
+                            
+                            if (!title) {
+                                layer.msg("活动标题不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!place) {
+                                layer.msg("活动地点不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!startTime || !endTime) {
+                                layer.msg("请选择开始时间和结束时间", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            var start = new Date(startTime.replace(/-/g, "/"));
+                            var end = new Date(endTime.replace(/-/g, "/"));
+                            var now = new Date();
+                            
+                            if (start <= now) {
+                                layer.msg("开始时间必须在当前时间之后", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (end <= start) {
+                                layer.msg("结束时间必须在开始时间之后", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            // 提交数据
+                            var url = '/ClubHub/Active/Create';
+                            var id = $('#box_id').val();
+                            if (id && id != '0' && id != '') {
+                                url = '/ClubHub/Active/Edit';
+                            }
+                            
+                            var postData = {
+                                Id: parseInt(id) || 0,
+                                ClubId: parseInt($('#box_clubId').val()) || (currentClubId ? parseInt(currentClubId) : 0),
+                                AdminId: parseInt($('#box_adminId').val()) || (currentUserId ? parseInt(currentUserId) : 0),
+                                Title: title,
+                                Content: $('#box_content').val() || '',
+                                Place: place,
+                                MinParticipants: parseInt($('#box_minParticipants').val()) || 0,
+                                StartTime: startTime,
+                                EndTime: endTime
+                            };
+                            
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List', {page: {curr: 1}}, 'data');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initForm(addForm);
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'edit') {
+                var str = $('#add_box').html();
+                var editForm = layer.open({
+                    title: "编辑活动",
+                    type: 1,
+                    area: ['600px', '550px'],
+                    content: str,
+                    resize: true,
+                    scrollbar: false,
+                    fixed: false,
+                    btn: ['确定', '取消'],
+                    btnAlign: 'c',
+                    yes: function (index, layero) {
+                        // 触发表单提交
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index, layerObj) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        // 修改确定按钮样式为暗红底白字
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        // 绑定表单提交事件
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            // 触发表单验证
+                            var startTime = $('#box_startTime').val();
+                            var endTime = $('#box_endTime').val();
+                            var title = $('#box_title').val();
+                            var place = $('#box_place').val();
+                            
+                            if (!title) {
+                                layer.msg("活动标题不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!place) {
+                                layer.msg("活动地点不能为空", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            if (!startTime || !endTime) {
+                                layer.msg("请选择开始时间和结束时间", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            var start = new Date(startTime.replace(/-/g, "/"));
+                            var end = new Date(endTime.replace(/-/g, "/"));
+                            
+                            if (end <= start) {
+                                layer.msg("结束时间必须在开始时间之后", {icon: 5, time: 2000, shade: 0.08});
+                                return false;
+                            }
+                            
+                            // 提交数据
+                            var url = '/ClubHub/Active/Edit';
+                            var id = $('#box_id').val();
+                            
+                            var postData = {
+                                Id: parseInt(id) || 0,
+                                ClubId: parseInt($('#box_clubId').val()) || 0,
+                                AdminId: parseInt($('#box_adminId').val()) || 0,
+                                Title: title,
+                                Content: $('#box_content').val() || '',
+                                Place: place,
+                                MinParticipants: parseInt($('#box_minParticipants').val()) || 0,
+                                StartTime: startTime,
+                                EndTime: endTime
+                            };
+                            
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List', {page: {curr: 1}}, 'data');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initForm(editForm, data);
+            } else if (obj.event === 'del') {
+                layer.confirm('确定要删除这个活动吗？', function (index) {
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Active/Delete',
+                        data: {id: data.id},
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(index);
+                                table.reload('List', {page: {curr: 1}}, 'data');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                            }
+                        },
+                        error: function () {
+                            layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                });
+            } else if (obj.event === 'viewMembers') {
+                layer.open({
+                    type: 1,
+                    title: '报名成员列表 - ' + data.title,
+                    area: ['800px', '600px'],
+                    content: '<div style="padding: 10px;"><table id="memberList" lay-filter="memberList"></table></div>',
+                    success: function (layero, index) {
+                        table.render({
+                            elem: '#memberList',
+                            id: 'memberList', // Explicit ID for reload
+                            url: '/ClubHub/Active/GetActiveMembers?activeId=' + data.id,
+                            page: true,
+                            cols: [[
+                                {field: 'studentId', title: '学号', width: 120, align: 'center'},
+                                {field: 'name', title: '姓名', width: 100, align: 'center'},
+                                {field: 'phoneNumber', title: '手机号', width: 120, align: 'center'},
+                                {
+                                    field: 'sex', title: '性别', width: 80, align: 'center', templet: function (d) {
+                                        if (d.sex == 1) return '男';
+                                        if (d.sex == 2) return '女';
+                                        return '未知';
+                                    }
+                                },
+                                {
+                                    field: 'signType', title: '参加状态', width: 100, align: 'center', templet: function (d) {
+                                        if (d.signType == 1) return '<span class="layui-badge layui-bg-blue">已报名</span>';
+                                        if (d.signType == 2) return '<span class="layui-badge layui-bg-green">已参加</span>';
+                                        if (d.signType == 3) return '<span class="layui-badge layui-bg-gray">未参加</span>';
+                                        return '';
+                                    }
+                                },
+                                {
+                                    title: '操作', width: 180, align: 'center', templet: function (d) {
+                                        var html = '';
+                                        if (d.signType != 2) {
+                                            html += '<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="markAttended" style="color: white !important;">已参加</a>';
+                                        }
+                                        if (d.signType != 3) {
+                                            html += '<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="markAbsent" style="color: white !important;">未参加</a>';
+                                        }
+                                        return html;
+                                    }
+                                }
+                            ]]
+                        });
+                    }
+                });
+            }
+        });
+
+        // Listen to memberList tool events
+        table.on('tool(memberList)', function (obj) {
+            var data = obj.data;
+            var signId = data.signId || data.SignId; // Handle potential casing issues
+            var status = 0;
+            if (obj.event === 'markAttended') status = 2;
+            if (obj.event === 'markAbsent') status = 3;
+
+            if (status > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: '/ClubHub/Active/UpdateSignStatus',
+                    data: {signId: signId, status: status},
+                    dataType: "json",
+                    success: function (res) {
+                        var isSuccess = res.Msg || res.msg;
+                        if (isSuccess) {
+                            layer.msg("操作成功");
+                            // Reload the memberList table
+                            table.reload('memberList');
+                        } else {
+                            layer.msg(res.Message || res.message || "操作失败");
+                        }
+                    },
+                    error: function () {
+                        layer.msg("请求失败");
+                    }
+                });
+            }
+        });
+    });
+</script>
+

@@ -1,0 +1,191 @@
+@{
+    Layout = null;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>社团广场</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        <input class="layui-input" name="clubName" id="clubName" placeholder="请输入社团名称" style="width: 200px; display: inline-block;">
+        <button class="layui-btn" data-type="search">搜索</button>
+        <button class="layui-btn layui-btn-normal" data-type="reload">刷新</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="clubList" lay-filter="List"></table>
+
+<script>
+    layui.use(['table', 'form', 'layer'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+
+        // 存储社团数据用于显示详情
+        window.clubsData = {};
+
+        // 格式化日期为 yyyy-MM-dd HH:mm 格式
+        function formatDateTimeMinute(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            var year = date.getFullYear();
+            var month = ('0' + (date.getMonth() + 1)).slice(-2);
+            var day = ('0' + date.getDate()).slice(-2);
+            var hours = ('0' + date.getHours()).slice(-2);
+            var minutes = ('0' + date.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+        }
+
+        function initIndex() {
+            table.render({
+                id: 'List',
+                elem: '#clubList',
+                url: '/ClubHub/Member/GetClubInfoList',
+                cols: [[
+                    {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                    {field: 'name', title: '社团名称', width: 150, align: 'center'},
+                    {field: 'description', title: '社团简介', width: 250, align: 'center'},
+                    {field: 'memberNum', title: '成员人数', width: 100, align: 'center'},
+                    {
+                        field: 'recentActivities', title: '近期活动', width: 150, align: 'center', templet: function (res) {
+                            if (res.recentActivities && res.recentActivities.length > 0) {
+                                return '<a href="javascript:;" class="layui-btn layui-btn-xs layui-btn-normal" onclick="showActivities(' + res.id + ')">查看(' + res.recentActivities.length + '条)</a>';
+                            }
+                            return '<span style="color: #999;">暂无活动</span>';
+                        }
+                    },
+                    {
+                        field: 'recentMessages', title: '近期通知', width: 150, align: 'center', templet: function (res) {
+                            if (res.recentMessages && res.recentMessages.length > 0) {
+                                return '<a href="javascript:;" class="layui-btn layui-btn-xs layui-btn-warm" onclick="showMessages(' + res.id + ')">查看(' + res.recentMessages.length + '条)</a>';
+                            }
+                            return '<span style="color: #999;">暂无通知</span>';
+                        }
+                    },
+                    {
+                        field: 'enterData', title: '创建时间', width: 160, align: 'center', templet: function (res) {
+                            return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                        }
+                    }
+                ]],
+                done: function (res, curr, count) {
+                    $("[data-field='id']").css('display', 'none');
+
+                    // 存储社团数据
+                    if (res.data) {
+                        res.data.forEach(function (club) {
+                            window.clubsData[club.id] = club;
+                        });
+                    }
+                },
+                page: true
+            });
+        }
+
+        initIndex();
+
+        // 显示活动详情
+        window.showActivities = function (clubId) {
+            var club = window.clubsData[clubId];
+
+            if (!club || !club.recentActivities || club.recentActivities.length === 0) {
+                layer.msg('暂无活动信息', {icon: 0});
+                return;
+            }
+
+            var content = '<div style="padding: 15px; max-height: 500px; overflow-y: auto;">';
+            content += '<h3 style="margin-bottom: 15px;">' + club.name + ' - 近期活动</h3>';
+
+            club.recentActivities.forEach(function (activity, index) {
+                content += '<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #e6e6e6; border-radius: 4px;">';
+                content += '<h4 style="margin: 0 0 10px 0; color: #009688;">' + (index + 1) + '. ' + activity.title + '</h4>';
+                content += '<p style="margin: 5px 0; color: #666;">' + (activity.content || '暂无内容') + '</p>';
+                content += '<div style="margin-top: 10px; font-size: 12px; color: #999;">';
+                if (activity.startTime) {
+                    content += '<span style="margin-right: 15px;">开始时间: ' + formatDateTimeMinute(activity.startTime) + '</span>';
+                }
+                if (activity.endTime) {
+                    content += '<span style="margin-right: 15px;">结束时间: ' + formatDateTimeMinute(activity.endTime) + '</span>';
+                }
+                content += '<span>参与人数: ' + activity.joinNum + '人</span>';
+                content += '</div>';
+                content += '</div>';
+            });
+
+            content += '</div>';
+
+            layer.open({
+                type: 1,
+                title: false,
+                closeBtn: 1,
+                area: ['700px', '600px'],
+                content: content
+            });
+        };
+
+        // 显示通知详情
+        window.showMessages = function (clubId) {
+            var club = window.clubsData[clubId];
+
+            if (!club || !club.recentMessages || club.recentMessages.length === 0) {
+                layer.msg('暂无通知信息', {icon: 0});
+                return;
+            }
+
+            var content = '<div style="padding: 15px; max-height: 500px; overflow-y: auto;">';
+            content += '<h3 style="margin-bottom: 15px;">' + club.name + ' - 近期通知</h3>';
+
+            club.recentMessages.forEach(function (message, index) {
+                content += '<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #e6e6e6; border-radius: 4px;">';
+                content += '<h4 style="margin: 0 0 10px 0; color: #FF5722;">' + (index + 1) + '. ' + message.title + '</h4>';
+                content += '<p style="margin: 5px 0; color: #666;">' + (message.content || '暂无内容') + '</p>';
+                content += '<div style="margin-top: 10px; font-size: 12px; color: #999;">';
+                content += '<span>发布时间: ' + new Date(message.enterData).toLocaleString() + '</span>';
+                content += '</div>';
+                content += '</div>';
+            });
+
+            content += '</div>';
+
+            layer.open({
+                type: 1,
+                title: false,
+                closeBtn: 1,
+                area: ['700px', '600px'],
+                content: content
+            });
+        };
+
+        var active = {
+            search: function () {
+                var clubName = $('#clubName').val();
+                table.reload('List', {
+                    where: {
+                        Name: clubName
+                    },
+                    page: {curr: 1}
+                });
+            },
+            reload: function () {
+                $('#clubName').val('');
+                table.reload('List', {
+                    where: {
+                        Name: ''
+                    },
+                    page: {curr: 1}
+                }, 'data');
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>

@@ -1,0 +1,1700 @@
+/**
+ * ClubHub UI Modernization - CSS Custom Properties and Base Styles
+ * 
+ * This file provides modern UI enhancements through CSS variables and
+ * progressive enhancement, while maintaining the existing Layui framework
+ * and dark red/white theme.
+ */
+
+/* ============================================
+   CSS Custom Properties (Variables)
+   ============================================ */
+
+:root {
+  /* 主题色 (Theme Colors) */
+  --primary-color: rgb(139, 1, 1);
+  --primary-hover: rgb(119, 1, 1);
+  --primary-light: rgb(211, 77, 77);
+  --primary-lighter: rgb(255, 235, 235);
+  --secondary-color: #20222A;
+  
+  /* 圆角 (Border Radius) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+  
+  /* 阴影 (Box Shadows) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-primary: 0 4px 14px 0 rgba(139, 1, 1, 0.25);
+  --shadow-primary-lg: 0 10px 25px -5px rgba(139, 1, 1, 0.3);
+  
+  /* 过渡 (Transitions) */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+}
+
+/* ============================================
+   Animation Keyframes
+   ============================================ */
+
+/* 淡入动画 (Fade In) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 缩放入场 (Scale In) */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 滑入动画 (Slide In) */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 滑入上动画 (Slide Up) */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Button Component Modernization
+   按钮组件现代化样式
+   ============================================ */
+
+/* 基础按钮样式 - 圆角和过渡效果 */
+.layui-btn {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-normal) !important;
+  font-weight: 500 !important;
+  box-shadow: var(--shadow-sm) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 20px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+/* 按钮悬停状态 - 阴影提升效果 */
+.layui-btn:hover {
+  box-shadow: var(--shadow-primary) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 按钮点击/激活状态 - 缩放效果 */
+.layui-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* 确保禁用状态不受影响 */
+.layui-btn[disabled],
+.layui-btn[disabled]:hover,
+.layui-btn[disabled]:active {
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* 小按钮样式 */
+.layui-btn-xs {
+  border-radius: var(--radius-sm) !important;
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+/* 流体按钮 */
+.layui-btn-fluid {
+  width: 100% !important;
+}
+
+/* 次要按钮 */
+.layui-btn-normal {
+  background-color: var(--primary-light) !important;
+  border-color: var(--primary-light) !important;
+}
+
+.layui-btn-normal:hover {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* ============================================
+   Form Input Component Modernization
+   表单输入框组件现代化样式
+   ============================================ */
+
+/* 基础输入框样式 - 圆角和过渡效果 */
+.layui-input,
+.layui-textarea {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 10px 14px !important;
+}
+
+/* 输入框聚焦状态 - 主题色边框和阴影 */
+.layui-input:focus,
+.layui-textarea:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(139, 1, 1, 0.1) !important;
+  outline: none !important;
+}
+
+/* 下拉选择框样式 - 圆角和过渡效果 */
+.layui-select,
+.layui-form-select .layui-input {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+/* 下拉选择框聚焦状态 */
+.layui-form-select .layui-input:focus,
+.layui-form-select.layui-form-selected .layui-input {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(139, 1, 1, 0.1) !important;
+}
+
+/* 下拉选择框下拉列表样式 */
+.layui-form-select dl {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid #e6e6e6 !important;
+  margin-top: 4px !important;
+}
+
+/* 下拉选项悬停效果 */
+.layui-form-select dl dd:hover {
+  background-color: rgba(139, 1, 1, 0.05) !important;
+  transition: background-color var(--transition-fast) !important;
+}
+
+/* 下拉选项选中状态 */
+.layui-form-select dl dd.layui-this {
+  background-color: var(--primary-color) !important;
+}
+
+/* 确保表单验证错误样式不受影响 */
+.layui-form-danger,
+.layui-form-danger:focus {
+  border-color: #FF5722 !important;
+}
+
+
+/* ============================================
+   Card and Panel Container Modernization
+   卡片和面板容器现代化样式
+   ============================================ */
+
+/* 卡片组件样式 - 圆角、阴影和悬停效果 */
+.layui-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all var(--transition-slow) !important;
+  overflow: hidden !important;
+  background-color: #fff !important;
+}
+
+/* 卡片悬停状态 - 阴影提升效果 */
+.layui-card:hover {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* 卡片头部样式 */
+.layui-card-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+  padding: 16px 20px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+/* 卡片内容区域样式 */
+.layui-card-body {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+  padding: 20px !important;
+}
+
+
+/* 面包屑导航区域样式 - 圆角、边框和阴影 */
+.layadmin-header {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  margin: 12px 16px !important;
+  background-color: #fff !important;
+}
+
+/* 面包屑内部元素样式优化 */
+.layadmin-header .layui-breadcrumb {
+  padding: 12px 20px !important;
+}
+
+
+/* 内容主体区域样式优化 - 内边距和圆角 */
+.layui-body {
+  padding: 16px !important;
+  background-color: #f9fafb !important;
+}
+
+/* 内容区域内的容器样式 */
+.layui-body > .layui-fluid,
+.layui-body > .layui-card {
+  border-radius: var(--radius-lg) !important;
+}
+
+/* 内容区域内的面板样式 */
+.layui-body .layui-panel {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+
+/* ============================================
+   Data Table Modernization
+   数据表格现代化样式
+   ============================================ */
+
+/* 表格容器样式 - 圆角和溢出处理 */
+.layui-table-view {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* 表格头部区域圆角处理 */
+.layui-table-view .layui-table-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+/* 表格主体区域圆角处理 */
+.layui-table-view .layui-table-body {
+  border-radius: 0 !important;
+}
+
+/* 表格底部工具栏圆角处理 */
+.layui-table-view .layui-table-tool {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+/* 表格底部分页区域圆角处理 */
+.layui-table-view .layui-table-page {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+  padding: 8px 16px !important;
+  height: auto !important;
+  min-height: 44px !important;
+  overflow: visible !important;
+}
+
+/* 修复分页组件被切掉的问题 */
+.layui-table-page > div {
+  height: auto !important;
+  min-height: 36px !important;
+  line-height: normal !important;
+  overflow: visible !important;
+}
+
+/* 表格分页容器 */
+.layui-table-page .layui-box {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* 修复分页组件被截断的问题 */
+[id^="layui-table-page"] {
+  height: auto !important;
+  min-height: 36px !important;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+}
+
+[id^="layui-laypage-"] {
+  height: auto !important;
+  min-height: 36px !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+/* 表格行悬停效果 */
+.layui-table tbody tr {
+  transition: background-color var(--transition-fast) !important;
+}
+
+.layui-table tbody tr:hover {
+  background-color: rgba(139, 1, 1, 0.03) !important;
+}
+
+/* 表格内按钮和标签统一样式 */
+.layui-table td .layui-btn-xs,
+.layui-table td .layui-badge,
+.layui-table td .layui-badge-rim {
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  margin: 0 2px !important;
+}
+
+/* 表格单元格垂直居中 */
+.layui-table td {
+  vertical-align: middle !important;
+}
+
+/* 表格内所有按钮统一样式 */
+.layui-table td .layui-btn {
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin: 0 2px !important;
+}
+
+/* 表格内所有标签/徽章统一样式 */
+.layui-table td .layui-badge,
+.layui-table td .layui-badge-rim,
+.layui-table td .layui-badge-dot {
+  height: 26px !important;
+  line-height: 26px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin: 0 2px !important;
+}
+
+/* 表格内图标按钮 */
+.layui-table td .layui-btn i.layui-icon {
+  font-size: 12px !important;
+  margin-right: 2px !important;
+}
+
+/* 确保斑马纹表格悬停效果正常 */
+.layui-table[lay-even] tbody tr:nth-child(even):hover {
+  background-color: rgba(139, 1, 1, 0.05) !important;
+}
+
+
+/* ============================================
+   Table Cell Expand Tooltip Modernization
+   表格单元格展开提示框现代化样式
+   ============================================ */
+
+/* 表格展开提示框整体样式 */
+body .layui-table-tips {
+  border-radius: var(--radius-lg) !important;
+  overflow: visible !important;
+}
+
+/* 表格展开提示框内容容器 */
+body .layui-table-tips .layui-layer-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: var(--shadow-xl) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+/* 表格展开提示框主要内容区域 */
+.layui-table-tips-main {
+  margin: 0 !important;
+  max-height: 300px !important;
+  min-height: 40px !important;
+  padding: 16px 20px !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  overflow-y: auto !important;
+  background-color: #fff !important;
+  color: #374151 !important;
+  border-radius: var(--radius-lg) !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+
+/* 表格展开提示框滚动条样式优化 */
+.layui-table-tips-main::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.layui-table-tips-main::-webkit-scrollbar-track {
+  background: #f3f4f6 !important;
+  border-radius: 3px !important;
+}
+
+.layui-table-tips-main::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 1, 1, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.layui-table-tips-main::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 1, 1, 0.5) !important;
+}
+
+/* 表格展开提示框关闭按钮 */
+.layui-table-tips-c {
+  position: absolute !important;
+  right: -8px !important;
+  top: -8px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  background-color: var(--primary-color) !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-md) !important;
+  z-index: 100 !important;
+}
+
+.layui-table-tips-c:hover {
+  background-color: var(--primary-hover) !important;
+  transform: scale(1.1) !important;
+}
+
+.layui-table-tips-c:before {
+  position: relative !important;
+  right: 0 !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+}
+
+
+/* ============================================
+   Pagination Component Modernization
+   分页组件现代化样式
+   ============================================ */
+
+/* 分页容器样式 */
+.layui-laypage {
+  padding: 6px 5px !important;
+  height: auto !important;
+  min-height: 36px !important;
+  line-height: normal !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 3px !important;
+}
+
+/* 分页按钮基础样式 - 圆角和过渡效果 */
+.layui-laypage a,
+.layui-laypage span {
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--transition-fast) !important;
+  margin: 0 2px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* 分页按钮悬停效果 */
+.layui-laypage a:hover {
+  background-color: rgba(139, 1, 1, 0.1) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+/* 分页当前页样式 */
+.layui-laypage .layui-laypage-curr .layui-laypage-em {
+  border-radius: var(--radius-sm) !important;
+  background-color: var(--primary-color) !important;
+}
+
+/* 分页当前页码容器 */
+.layui-laypage .layui-laypage-curr {
+  height: 32px !important;
+  line-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* 分页当前页码数字 */
+.layui-laypage .layui-laypage-curr em {
+  height: 32px !important;
+  line-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 分页输入框样式 */
+.layui-laypage .layui-laypage-skip .layui-input {
+  border-radius: var(--radius-sm) !important;
+  transition: border-color var(--transition-fast) !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 6px !important;
+  box-sizing: border-box !important;
+}
+
+.layui-laypage .layui-laypage-skip .layui-input:focus {
+  border-color: var(--primary-color) !important;
+}
+
+/* 分页确定按钮样式 */
+.layui-laypage .layui-laypage-btn {
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--transition-fast) !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+}
+
+.layui-laypage .layui-laypage-btn:hover {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #fff !important;
+}
+
+/* 分页下拉选择框样式 */
+.layui-laypage .layui-laypage-limits select {
+  border-radius: var(--radius-sm) !important;
+  transition: border-color var(--transition-fast) !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 6px !important;
+  box-sizing: border-box !important;
+}
+
+.layui-laypage .layui-laypage-limits select:focus {
+  border-color: var(--primary-color) !important;
+  outline: none !important;
+}
+
+/* 分页文字和统计信息 */
+.layui-laypage .layui-laypage-skip,
+.layui-laypage .layui-laypage-count,
+.layui-laypage .layui-laypage-limits {
+  height: 32px !important;
+  line-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+
+/* ============================================
+   Modal/Popup Component Modernization
+   弹窗组件现代化样式
+   ============================================ */
+
+/* 淡出动画 (Fade Out) - 用于弹窗退场 */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* 弹窗容器样式 - 圆角和阴影 */
+.layui-layer {
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-xl) !important;
+  overflow: visible !important;
+}
+
+/* 弹窗标题栏样式 */
+.layui-layer-title {
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+  padding: 16px 24px !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+/* 弹窗内容区域样式 */
+.layui-layer-content {
+  border-radius: 0 !important;
+  padding: 24px !important;
+}
+
+/* 弹窗底部按钮区域样式 */
+.layui-layer-btn {
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl) !important;
+  padding: 16px 24px !important;
+  border-top: 1px solid #f3f4f6 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+}
+
+/* 弹窗底部按钮样式 - 继承全局按钮圆角 */
+.layui-layer-btn a {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-normal) !important;
+  padding: 8px 20px !important;
+  height: auto !important;
+  line-height: normal !important;
+}
+
+/* 弹窗底部按钮悬停效果 */
+.layui-layer-btn a:hover {
+  box-shadow: var(--shadow-primary) !important;
+}
+
+/* 弹窗关闭按钮样式 - 完整显示并移除悬停背景色变化 */
+.layui-layer-close,
+.layui-layer-close1,
+.layui-layer-close2 {
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  transition: color var(--transition-fast) !important;
+}
+
+/* 弹窗关闭按钮悬停效果 - 只改变颜色，不改变背景 */
+.layui-layer-close:hover,
+.layui-layer-close1:hover,
+.layui-layer-close2:hover {
+  background-color: transparent !important;
+  color: var(--primary-color) !important;
+}
+
+/* iframe 弹窗样式 */
+.layui-layer-iframe {
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+}
+
+/* iframe 内容区域样式 */
+.layui-layer-iframe .layui-layer-content {
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl) !important;
+}
+
+/* 提示框样式 (tips) */
+.layui-layer-tips {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* 提示框内容样式 */
+.layui-layer-tips .layui-layer-content {
+  border-radius: var(--radius-lg) !important;
+}
+
+/* 消息框样式 (msg) - 移除动画避免闪烁 */
+.layui-layer-msg {
+  border-radius: var(--radius-lg) !important;
+}
+
+/* 修复表单验证提示框中图标遮挡文字的问题 */
+.layui-layer-dialog .layui-layer-padding {
+  padding: 20px 25px 20px 80px !important;
+}
+
+.layui-layer-dialog .layui-layer-content .layui-layer-ico {
+  left: 25px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* 消息提示框内容样式优化 */
+.layui-layer-hui .layui-layer-content {
+  padding: 18px 40px !important;
+  font-size: 14px !important;
+}
+
+/* 确保图标和文字有足够间距 - 修复文字被遮挡问题 */
+.layui-layer-msg .layui-layer-content {
+  padding: 18px 30px 18px 70px !important;
+  position: relative !important;
+  min-height: 36px !important;
+  line-height: 1.6 !important;
+  box-sizing: border-box !important;
+}
+
+/* 消息提示框中的图标定位 */
+.layui-layer-msg .layui-layer-ico {
+  position: absolute !important;
+  left: 22px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 30px !important;
+  height: 30px !important;
+}
+
+/* 针对 layer.msg 带图标的情况增加额外间距 */
+.layui-layer-msg.layui-layer-hui .layui-layer-content,
+.layui-layer-msg .layui-layer-padding {
+  padding-left: 70px !important;
+}
+
+/* 确保消息框最小宽度足够显示文字 */
+.layui-layer-msg {
+  min-width: 240px !important;
+}
+
+/* 专门针对登录页面验证提示的样式 */
+.layui-layer-msg .layui-layer-content.layui-layer-padding {
+  padding-left: 75px !important;
+  padding-right: 30px !important;
+}
+
+/* 加载层样式 (loading) */
+.layui-layer-loading {
+  border-radius: var(--radius-lg) !important;
+}
+
+/* 弹窗遮罩层样式 - 添加过渡效果 */
+.layui-layer-shade {
+  transition: opacity var(--transition-normal) !important;
+}
+
+/* 确认框样式 (dialog) */
+.layui-layer-dialog {
+  border-radius: var(--radius-xl) !important;
+}
+
+/* 确认框图标区域样式 */
+.layui-layer-dialog .layui-layer-content {
+  padding: 24px !important;
+}
+
+/* 页面层样式 (page) */
+.layui-layer-page {
+  border-radius: var(--radius-xl) !important;
+}
+
+/* 弹窗最小化/最大化/关闭按钮组样式 */
+.layui-layer-setwin {
+  top: 16px !important;
+  right: 16px !important;
+}
+
+.layui-layer-setwin a {
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  transition: color var(--transition-fast) !important;
+}
+
+.layui-layer-setwin a:hover {
+  background-color: transparent !important;
+  color: var(--primary-color) !important;
+}
+
+/* 弹窗拖拽移动时的样式 */
+.layui-layer-moves {
+  border-radius: var(--radius-xl) !important;
+}
+
+
+
+/* ============================================
+   Sidebar Navigation Modernization
+   侧边栏导航现代化样式
+   ============================================ */
+
+/* 导航菜单项基础样式 - 圆角和过渡效果 */
+.layui-nav-tree .layui-nav-item {
+  margin: 3px 10px !important;
+  border-radius: var(--radius-md) !important;
+  transition: background-color var(--transition-normal) !important;
+  overflow: hidden !important;
+}
+
+/* 导航菜单项链接样式 - 确保左右两侧圆角一致 */
+.layui-nav-tree .layui-nav-item > a {
+  border-radius: var(--radius-md) !important;
+  margin: 0 !important;
+  transition: all var(--transition-normal) !important;
+  padding: 0 16px !important;
+}
+
+/* 导航菜单项悬停效果 - 平滑背景色过渡 */
+.layui-nav-tree .layui-nav-item:hover > a,
+.layui-nav-tree .layui-nav-item a:hover {
+  background-color: rgba(139, 1, 1, 0.1) !important;
+}
+
+/* 子菜单项样式 - 圆角和过渡效果，左右间距统一 */
+.layui-nav-tree .layui-nav-child dd {
+  margin: 3px 10px !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden !important;
+}
+
+/* 子菜单项链接样式 - 确保左右两侧圆角一致 */
+.layui-nav-tree .layui-nav-child dd a {
+  border-radius: var(--radius-sm) !important;
+  margin: 0 !important;
+  display: block !important;
+  transition: all var(--transition-normal) !important;
+}
+
+/* 子菜单项悬停效果 */
+.layui-nav-tree .layui-nav-child dd:hover a,
+.layui-nav-tree .layui-nav-child dd a:hover {
+  background-color: rgba(139, 1, 1, 0.15) !important;
+}
+
+/* 一级菜单倒三角位置调整 - 向左移动 */
+.layui-nav-tree .layui-nav-more {
+  right: 20px !important;
+}
+
+/* 弹窗标题高度调整 - 修复文字被遮挡问题 */
+.layui-layer-title {
+  height: 60px !important;
+  line-height: 60px !important;
+}
+
+
+/* 子菜单展开/收起过渡动画 - 仅使用简单过渡，避免与Layui冲突 */
+.layui-nav-tree .layui-nav-child {
+  transition: none !important;
+}
+
+/* 子菜单展开状态 - 确保正常显示 */
+.layui-nav-tree .layui-nav-item.layui-nav-itemed > .layui-nav-child {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+/* 导航菜单选中状态 - 保持暗红色主题 */
+.layui-nav-tree .layui-nav-item.layui-this > a,
+.layui-nav-tree .layui-nav-item.layui-this > a:hover {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* 子菜单选中状态 - 保持暗红色主题 */
+.layui-nav-tree .layui-nav-child dd.layui-this a,
+.layui-nav-tree .layui-nav-child dd.layui-this a:hover {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+}
+
+/* 展开状态的父菜单项样式 - 保持暗红色主题 */
+.layui-nav-tree .layui-nav-item.layui-nav-itemed > a {
+  background-color: rgba(139, 1, 1, 0.1) !important;
+}
+
+/* 侧边栏整体样式优化 */
+.layui-side-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(139, 1, 1, 0.3) transparent !important;
+}
+
+/* 侧边栏滚动条样式 (Webkit浏览器) */
+.layui-side-scroll::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.layui-side-scroll::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.layui-side-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 1, 1, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.layui-side-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 1, 1, 0.5) !important;
+}
+
+
+/* ============================================
+   Header Navigation Modernization
+   头部导航现代化样式
+   ============================================ */
+
+/* 头部区域样式 - 底部阴影效果 */
+.layui-header {
+  box-shadow: var(--shadow-md) !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Logo区域样式优化 - 添加左边距和分隔符美化 */
+.layui-logo {
+  padding-left: 24px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Logo标题样式 */
+.layui-logo .logo-title {
+  font-weight: 600 !important;
+  color: #fff !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Logo分隔符样式 */
+.layui-logo .logo-divider {
+  margin: 0 10px !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-weight: 300 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Logo社团名称样式 */
+.layui-logo .logo-club {
+  font-weight: 400 !important;
+  opacity: 0.9 !important;
+  color: rgb(211, 77, 77) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 移除Logo区域所有子元素的边框和线条 */
+.layui-logo span,
+.layui-logo * {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+/* 头部导航下拉菜单样式 - 圆角和阴影 */
+/* 注意：仅针对头部导航的下拉菜单，避免影响侧边栏 */
+.layui-header .layui-nav-child {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  margin-top: 8px !important;
+}
+
+/* 下拉菜单项样式 */
+.layui-nav-child dd {
+  transition: background-color var(--transition-fast) !important;
+}
+
+/* 下拉菜单项悬停效果 */
+.layui-nav-child dd:hover {
+  background-color: rgba(139, 1, 1, 0.05) !important;
+}
+
+/* 下拉菜单项链接样式 */
+.layui-nav-child dd a {
+  transition: color var(--transition-fast) !important;
+}
+
+/* 下拉菜单项悬停时链接颜色 */
+.layui-nav-child dd:hover a {
+  color: var(--primary-color) !important;
+}
+
+
+/* 用户头像样式 - 圆形边框 */
+.layui-nav-img {
+  border-radius: 50% !important;
+  transition: all var(--transition-normal) !important;
+}
+
+/* 用户头像悬停效果 */
+.layui-nav-img:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+
+/* ============================================
+   Login Page Modernization
+   登录页面现代化样式
+   ============================================ */
+
+/* 登录页面入场动画 */
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 登录主容器样式 - 圆角、阴影和入场动画 */
+.layadmin-user-login-main {
+  background-color: #fff !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-xl) !important;
+  padding: 40px !important;
+  animation: loginFadeIn 0.5s ease !important;
+}
+
+/* 登录表单区域样式 */
+.layadmin-user-login-main .layui-form {
+  margin-top: 24px !important;
+}
+
+/* 登录页面输入框样式 - 确保圆角和聚焦效果 */
+.layadmin-user-login-main .layui-input {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+  padding-left: 44px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+}
+
+.layadmin-user-login-main .layui-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(139, 1, 1, 0.1) !important;
+  outline: none !important;
+}
+
+/* 登录按钮样式 - 与全局按钮样式一致 */
+.layadmin-user-login-main .layui-btn {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-normal) !important;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  height: 48px !important;
+  line-height: 48px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* 登录按钮悬停效果 */
+.layadmin-user-login-main .layui-btn:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  box-shadow: var(--shadow-primary) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 登录按钮点击效果 */
+.layadmin-user-login-main .layui-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* 登录页面头部样式 */
+.layadmin-user-login-header {
+  animation: loginFadeIn 0.5s ease 0.1s both !important;
+}
+
+/* 登录页面页脚样式 */
+.layadmin-user-login-footer {
+  animation: loginFadeIn 0.5s ease 0.3s both !important;
+}
+
+/* 登录表单项间距优化 */
+.layadmin-user-login-main .layui-form-item {
+  margin-bottom: 20px !important;
+}
+
+/* 登录页面单选按钮样式优化 */
+.layadmin-user-login-main .layui-form-radio {
+  transition: color var(--transition-fast) !important;
+}
+
+.layadmin-user-login-main .layui-form-radioed > i {
+  color: var(--primary-color) !important;
+}
+
+/* 登录图标样式 */
+.layadmin-user-login-icon {
+  width: 44px !important;
+  line-height: 48px !important;
+  color: #d1d5db !important;
+  transition: color var(--transition-fast) !important;
+}
+
+.layui-input:focus + .layadmin-user-login-icon,
+.layui-input:focus ~ .layadmin-user-login-icon {
+  color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Form Components Enhancement
+   表单组件增强样式
+   ============================================ */
+
+/* 表单标签样式 */
+.layui-form-label {
+  font-weight: 500 !important;
+  color: #374151 !important;
+  border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+}
+
+/* 表单面板样式 */
+.layui-form-pane .layui-form-label {
+  background-color: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* 表单面板输入框 */
+.layui-form-pane .layui-input {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+}
+
+/* 单选按钮样式 */
+.layui-form-radio > i {
+  transition: color var(--transition-fast) !important;
+}
+
+.layui-form-radio:hover > i,
+.layui-form-radioed > i {
+  color: var(--primary-color) !important;
+}
+
+/* 复选框样式 */
+.layui-form-checkbox {
+  transition: all var(--transition-fast) !important;
+}
+
+.layui-form-checkbox:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.layui-form-checked,
+.layui-form-checked:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.layui-form-checked span,
+.layui-form-checked:hover span {
+  background-color: var(--primary-color) !important;
+}
+
+.layui-form-checked i,
+.layui-form-checked:hover i {
+  color: var(--primary-color) !important;
+}
+
+/* 开关样式 */
+.layui-form-switch {
+  border-radius: 20px !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.layui-form-onswitch {
+  border-color: var(--primary-color) !important;
+  background-color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Badge and Tag Components
+   徽章和标签组件样式
+   ============================================ */
+
+.layui-badge,
+.layui-badge-rim {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
+  padding: 0 10px !important;
+  height: 26px !important;
+  line-height: 26px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+.layui-badge {
+  background-color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Tab Components
+   标签页组件样式
+   ============================================ */
+
+.layui-tab-title {
+  border-bottom-color: #e5e7eb !important;
+}
+
+.layui-tab-title li {
+  transition: all var(--transition-fast) !important;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+}
+
+.layui-tab-title li:hover {
+  background-color: rgba(139, 1, 1, 0.05) !important;
+}
+
+.layui-tab-title li.layui-this {
+  color: var(--primary-color) !important;
+}
+
+.layui-tab-title li.layui-this:after {
+  border-bottom-color: var(--primary-color) !important;
+  border-width: 3px !important;
+}
+
+.layui-tab-content {
+  padding: 20px !important;
+}
+
+
+/* ============================================
+   Timeline Components
+   时间线组件样式
+   ============================================ */
+
+.layui-timeline-item:before {
+  background-color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Progress Components
+   进度条组件样式
+   ============================================ */
+
+.layui-progress-bar {
+  background-color: var(--primary-color) !important;
+  border-radius: var(--radius-full) !important;
+}
+
+.layui-progress {
+  border-radius: var(--radius-full) !important;
+}
+
+
+/* ============================================
+   Upload Components
+   上传组件样式
+   ============================================ */
+
+.layui-upload-drag {
+  border-radius: var(--radius-lg) !important;
+  border-color: #e5e7eb !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.layui-upload-drag:hover {
+  border-color: var(--primary-color) !important;
+  background-color: rgba(139, 1, 1, 0.02) !important;
+}
+
+
+/* ============================================
+   Color Picker Components
+   颜色选择器样式
+   ============================================ */
+
+.layui-colorpicker {
+  border-radius: var(--radius-sm) !important;
+}
+
+
+/* ============================================
+   Slider Components
+   滑块组件样式
+   ============================================ */
+
+.layui-slider-bar {
+  background-color: var(--primary-color) !important;
+}
+
+.layui-slider-wrap-btn {
+  border-color: var(--primary-color) !important;
+}
+
+.layui-slider-wrap-btn:hover,
+.layui-slider-wrap-btn.layui-slider-hover {
+  transform: scale(1.2) !important;
+}
+
+
+/* ============================================
+   Rate Components
+   评分组件样式
+   ============================================ */
+
+.layui-rate li i.layui-icon {
+  transition: transform var(--transition-fast) !important;
+}
+
+.layui-rate li i.layui-icon:hover {
+  transform: scale(1.2) !important;
+}
+
+
+/* ============================================
+   Transfer Components
+   穿梭框组件样式
+   ============================================ */
+
+.layui-transfer-box {
+  border-radius: var(--radius-lg) !important;
+  border-color: #e5e7eb !important;
+}
+
+.layui-transfer-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+  background-color: #f9fafb !important;
+}
+
+.layui-transfer-active .layui-btn {
+  border-radius: var(--radius-full) !important;
+}
+
+
+/* ============================================
+   Tree Components
+   树形组件样式
+   ============================================ */
+
+.layui-tree-entry:hover {
+  background-color: rgba(139, 1, 1, 0.05) !important;
+}
+
+.layui-tree-txt {
+  transition: color var(--transition-fast) !important;
+}
+
+.layui-tree-entry:hover .layui-tree-txt {
+  color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Laydate Components
+   日期选择器样式
+   ============================================ */
+
+.layui-laydate-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+.layui-laydate-content td.layui-this {
+  background-color: var(--primary-color) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.layui-laydate-content td:hover {
+  background-color: rgba(139, 1, 1, 0.1) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.layui-laydate-footer {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+}
+
+
+/* ============================================
+   Responsive Design
+   响应式设计
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+  /* 移动端侧边栏 */
+  .layui-side {
+    width: 220px !important;
+  }
+  
+  /* 移动端内容区域 */
+  .layui-body {
+    left: 0 !important;
+    padding: 12px !important;
+  }
+  
+  /* 移动端卡片 */
+  .layui-card {
+    margin-bottom: 16px !important;
+  }
+  
+  .layui-card-header {
+    padding: 12px 16px !important;
+  }
+  
+  .layui-card-body {
+    padding: 16px !important;
+  }
+  
+  /* 移动端表格 */
+  .layui-table-view {
+    overflow-x: auto !important;
+  }
+  
+  /* 移动端弹窗 */
+  .layui-layer {
+    max-width: 95vw !important;
+  }
+  
+  /* 移动端登录框 */
+  .layadmin-user-login-main {
+    width: 90% !important;
+    max-width: 375px !important;
+    padding: 30px 24px !important;
+  }
+  
+  /* 移动端按钮 */
+  .layui-btn {
+    padding: 0 16px !important;
+  }
+  
+  /* 移动端搜索区域 */
+  .demoTable {
+    padding: 12px !important;
+  }
+  
+  .demoTable .layui-inline {
+    display: block !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+  }
+  
+  .demoTable .layui-input {
+    width: 100% !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  /* 小屏幕手机 */
+  .layui-logo {
+    font-size: 14px !important;
+    padding-left: 12px !important;
+  }
+  
+  .layui-logo span {
+    display: none !important;
+  }
+  
+  .layui-header .layui-nav {
+    padding: 0 10px !important;
+  }
+  
+  .layadmin-header {
+    margin: 8px !important;
+  }
+  
+  .layadmin-header .layui-breadcrumb {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+
+/* ============================================
+   Animation Utilities
+   动画工具类
+   ============================================ */
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out !important;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out !important;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out !important;
+}
+
+/* 动画延迟 */
+.animation-delay-100 {
+  animation-delay: 100ms !important;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms !important;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms !important;
+}
+
+
+/* ============================================
+   Utility Classes
+   实用工具类
+   ============================================ */
+
+/* 阴影工具类 */
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.shadow-xl {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+.shadow-primary {
+  box-shadow: var(--shadow-primary) !important;
+}
+
+/* 圆角工具类 */
+.rounded-sm {
+  border-radius: var(--radius-sm) !important;
+}
+
+.rounded-md {
+  border-radius: var(--radius-md) !important;
+}
+
+.rounded-lg {
+  border-radius: var(--radius-lg) !important;
+}
+
+.rounded-xl {
+  border-radius: var(--radius-xl) !important;
+}
+
+.rounded-full {
+  border-radius: var(--radius-full) !important;
+}
+
+/* 过渡工具类 */
+.transition-fast {
+  transition: all var(--transition-fast) !important;
+}
+
+.transition-normal {
+  transition: all var(--transition-normal) !important;
+}
+
+.transition-slow {
+  transition: all var(--transition-slow) !important;
+}
+
+/* 文本颜色工具类 */
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-primary-light {
+  color: var(--primary-light) !important;
+}
+
+/* 背景颜色工具类 */
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.bg-primary-light {
+  background-color: var(--primary-light) !important;
+}
+
+.bg-primary-lighter {
+  background-color: var(--primary-lighter) !important;
+}
+
+/* 边框颜色工具类 */
+.border-primary {
+  border-color: var(--primary-color) !important;
+}
+
+
+/* ============================================
+   Print Styles
+   打印样式
+   ============================================ */
+
+@media print {
+  .layui-header,
+  .layui-side,
+  .layui-footer,
+  .layui-laypage,
+  .demoTable {
+    display: none !important;
+  }
+  
+  .layui-body {
+    left: 0 !important;
+    padding: 0 !important;
+    background-color: #fff !important;
+  }
+  
+  .layui-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+}

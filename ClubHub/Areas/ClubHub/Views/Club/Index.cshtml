@@ -1,0 +1,576 @@
+@{
+    ViewData["Title"] = "社团管理";
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>社团管理</cite></a><span lay-separator="">/</span>
+        <a><cite>社团信息管理</cite></a>
+    </div>
+</div>
+
+@*列表搜索*@
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        社团名称：
+        <div class="layui-inline">
+            <input class="layui-input" name="clubName" id="clubName" autocomplete="off" placeholder="请输入社团名称">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+    <div style="float: right;padding-right: 10px;">
+        <button class="layui-btn" data-type="add">新增</button>
+    </div>
+</div>
+
+@*列表*@
+<table class="layui-hide" id="clubList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="edit">编辑</a>
+    {{# if(d.memberCount > 0){ }}
+    <a class="layui-btn layui-btn-xs layui-btn-disabled" style="background-color: rgb(180, 180, 180); color: white; cursor: not-allowed;" lay-event="delDisabled" title="该社团还有 {{d.memberCount}} 名成员，无法删除">删除</a>
+    {{# } else { }}
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="del">删除</a>
+    {{# } }}
+</script>
+
+@*编辑成员信息弹窗*@
+<script type="text/template" id="edit_member_box">
+    <form class="layui-form layui-form-pane" lay-filter="editMemberFormFilter" style="padding:10px">
+        <input type="text" name="id" id="member_id" class="layui-input" style="display:none">
+        <input type="text" name="clubId" id="member_clubId" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">学号</label>
+            <div class="layui-input-block">
+                <input type="text" id="member_studentId" readonly class="layui-input layui-disabled">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">姓名</label>
+            <div class="layui-input-block">
+                <input type="text" name="Name" id="member_name" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入姓名">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <input type="radio" name="Sex" value="0" title="未知">
+                <input type="radio" name="Sex" value="1" title="男">
+                <input type="radio" name="Sex" value="2" title="女">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机号</label>
+            <div class="layui-input-block">
+                <input type="text" name="PhoneNumber" id="member_phoneNumber" autocomplete="off" class="layui-input" placeholder="请输入手机号">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">部门</label>
+            <div class="layui-input-block">
+                <select name="DutyId" id="member_dutyId">
+                    <option value="">无部门</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">职位</label>
+            <div class="layui-input-block">
+                <input type="radio" name="DutyRole" value="0" title="成员" checked>
+                <input type="radio" name="DutyRole" value="1" title="部长">
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="submitMemberForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+@*新增、编辑弹窗*@
+<script type="text/template" id="add_box">
+    <form class="layui-form layui-form-pane" lay-filter="addFormFilter" style="padding:10px">
+        <input type="text" name="id" id="box_id" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">社团名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="Name" id="box_name" lay-verify="required" autocomplete="off" class="layui-input" placeholder="请输入社团名称">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">社团说明</label>
+            <div class="layui-input-block">
+                <textarea name="Description" id="box_description" lay-verify="required" placeholder="请输入社团说明" class="layui-textarea" style="min-height: 100px;"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display:none;">
+            <div class="layui-input-block">
+                <button class="layui-btn" id="submitForm" lay-submit lay-filter="submitForm"></button>
+            </div>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form'],
+        function () {
+            var $ = layui.$;
+            var table = layui.table;
+            var form = layui.form;
+
+            function initIndex() {
+                table.render({
+                    id: 'List',
+                    elem: '#clubList',
+                    url: '/ClubHub/Club/GetAll',
+                    title: '社团数据表',
+                    cols: [
+                        [
+                            {type: 'checkbox', fixed: 'left'},
+                            {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                            {field: 'name', title: '社团名称', width: 250, align: 'center'},
+                            {field: 'description', title: '社团说明', width: 350, align: 'center'},
+                            {
+                                field: 'memberCount',
+                                title: '社团人数',
+                                width: 150,
+                                align: 'center',
+                                templet: function (d) {
+                                    return d.memberCount + ' <a class="layui-btn layui-btn-xs" lay-event="viewMembers" style="background-color: rgb(211, 77, 77); color: white; margin-left:5px; padding: 0 5px;"><i class="layui-icon layui-icon-form"></i></a>';
+                                }
+                            },
+                            {
+                                field: 'enterData', title: '创办时间', width: 200, align: 'center', templet: function (res) {
+                                    return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                                }
+                            },
+                            {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 200, align: 'center'}
+                        ]
+                    ],
+                    done: function () { // 隐藏id列
+                        $("[data-field='id']").css('display', 'none');
+                    },
+                    page: true
+                });
+            }
+
+            //初始化列表页面
+            initIndex();
+
+            //初始化表单页面
+            function initForm(formObj, dataObj) {
+                console.log(dataObj);
+
+                if (!!dataObj) {
+                    $("#box_id").val(dataObj.id);
+                    $("#box_name").val(dataObj.name);
+                    $("#box_description").val(dataObj.description);
+                }
+
+                //表单提交
+                form.on('submit(submitForm)',
+                    function (data) {
+                        var url = '/ClubHub/Club/Create';
+                        if (!!data.field.id && data.field.id != '0' && data.field.id != '') {
+                            url = '/ClubHub/Club/Edit';
+                        }
+
+                        // 新增时移除id字段
+                        var postData = {};
+                        if (url === '/ClubHub/Club/Create') {
+                            postData.Name = data.field.Name || '';
+                            postData.Description = data.field.Description || '';
+                        } else {
+                            postData.Id = data.field.id || 0;
+                            postData.Name = data.field.Name || '';
+                            postData.Description = data.field.Description || '';
+                        }
+
+                        console.log("提交数据:", postData);
+                        console.log("提交URL:", url);
+
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: postData,
+                            dataType: "json",
+                            beforeSend: function () {
+                            },
+                            success: function (response) {
+                                console.log("服务器响应:", response);
+                                // 兼容大小写：msg/Msg, message/Message
+                                var isSuccess = (response && (response.Msg || response.msg));
+                                var message = response ? (response.Message || response.message || "操作成功") : "操作失败：服务器返回数据格式错误";
+
+                                if (isSuccess) {
+                                    layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(formObj);
+                                    // 使用table.reload刷新列表，而不是重新初始化
+                                    table.reload('List', {
+                                        page: {
+                                            curr: 1 //重新从第 1 页开始
+                                        }
+                                    }, 'data');
+                                } else {
+                                    layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            },
+                            complete: function () {
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                console.log("AJAX错误详情:", XMLHttpRequest);
+                                console.log("错误状态:", textStatus);
+                                console.log("错误信息:", errorThrown);
+                                console.log("响应文本:", XMLHttpRequest.responseText);
+
+                                var errorMsg = "请求失败";
+                                if (XMLHttpRequest.responseText) {
+                                    try {
+                                        var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                        if (errorResponse.Message) {
+                                            errorMsg = errorResponse.Message;
+                                        } else if (errorResponse.message) {
+                                            errorMsg = errorResponse.message;
+                                        }
+                                    } catch (e) {
+                                        errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                    }
+                                } else if (errorThrown) {
+                                    errorMsg = errorThrown;
+                                } else if (textStatus) {
+                                    errorMsg = textStatus;
+                                }
+
+                                layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        });
+                        return false;
+                    });
+                form.render();
+                return false;
+            }
+
+            //页面事件
+            var active = {
+                reload: function () {
+                    var clubName = $('#clubName');
+                    //执行重载
+                    table.reload('List',
+                        {
+                            page: {
+                                curr: 1 //重新从第 1 页开始
+                            },
+                            where: {
+                                Name: clubName.val()
+                            }
+                        },
+                        'data');
+                },
+                add: function () {
+                    var str = $('#add_box').html();
+                    var addForm = layer.open({
+                        title: "添加社团",
+                        type: 1,
+                        area: ['500px', '400px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) { //保存按钮事件
+                            $("#submitForm").click();
+                        },
+                        btn2: function (index, obj) { //窗口关闭按钮事件
+                            layer.close(index);
+                        },
+                        cancel: function (index) { //窗口关闭按钮事件
+                            layer.close(index);
+                        }
+                    });
+
+                    initForm(addForm);
+                }
+            };
+
+            //监听页面工具事件（搜索、新增、刷新等）
+            $('.demoTable .layui-btn').on('click',
+                function () {
+                    var type = $(this).data('type');
+                    active[type] ? active[type].call(this) : '';
+                });
+
+            //监听行工具事件（编辑、删除等）
+            table.on('tool(List)',
+                function (obj) {
+                    var data = obj.data;
+                    console.log(obj);
+                    if (obj.event === 'delDisabled') {
+                        layer.msg('该社团还有 ' + data.memberCount + ' 名成员，无法删除。请先移除所有成员后再删除社团。', {icon: 5, time: 3000, shade: 0.08});
+                    }
+                    if (obj.event === 'del') {
+                        layer.confirm('确定要删除这个社团吗？',
+                            function (index) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '/ClubHub/Club/Delete',
+                                    data: {id: data.id},
+                                    dataType: "json",
+                                    beforeSend: function () {
+                                    },
+                                    success: function (response) {
+                                        // 兼容大小写：msg/Msg, message/Message
+                                        var isSuccess = (response && (response.Msg || response.msg));
+                                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                        if (isSuccess) {
+                                            layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                            layer.close(index);
+                                            // 使用table.reload刷新列表
+                                            table.reload('List', {
+                                                page: {
+                                                    curr: 1 //重新从第 1 页开始
+                                                }
+                                            }, 'data');
+                                        } else {
+                                            layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                                        }
+                                    },
+                                    complete: function () {
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        console.log("删除AJAX错误详情:", XMLHttpRequest, textStatus, errorThrown);
+                                        layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                                    }
+                                });
+                            });
+                    }
+                    if (obj.event === 'edit') {
+                        var str = $('#add_box').html();
+                        var editForm = layer.open({
+                            title: "编辑社团",
+                            type: 1,
+                            area: ['500px', '400px'],
+                            content: str,
+                            resize: true,
+                            scrollbar: false,
+                            fixed: false,
+                            btn: ['确定', '取消'],
+                            yes: function (index, obj) { //保存按钮事件
+                                $("#submitForm").click();
+                            },
+                            btn2: function (index, obj) { //窗口关闭按钮事件
+                                layer.close(index);
+                            },
+                            cancel: function (index) { //窗口关闭按钮事件
+                                layer.close(index);
+                            }
+                        });
+
+                        initForm(editForm, data);
+                    }
+                    if (obj.event === 'viewMembers') {
+                        layer.open({
+                            type: 1,
+                            title: '社团成员列表 - ' + data.name,
+                            area: ['1000px', '600px'],
+                            content: '<div style="padding: 10px;"><table id="memberList" lay-filter="memberList"></table></div>',
+                            success: function (layero, index) {
+                                table.render({
+                                    elem: '#memberList',
+                                    id: 'memberList',
+                                    url: '/ClubHub/Club/GetClubMembers?clubId=' + data.id,
+                                    page: true,
+                                    cols: [[
+                                        {field: 'studentId', title: '学号', width: 120, align: 'center'},
+                                        {field: 'name', title: '姓名', width: 120, align: 'center'},
+                                        {
+                                            field: 'sex',
+                                            title: '性别',
+                                            width: 80,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                if (d.sex == 1) return '男';
+                                                if (d.sex == 2) return '女';
+                                                return '未知';
+                                            }
+                                        },
+                                        {field: 'phoneNumber', title: '手机号', width: 130, align: 'center'},
+                                        {
+                                            field: 'dutyName',
+                                            title: '部门',
+                                            width: 120,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                return d.dutyName || '<span style="color: #999;">无部门</span>';
+                                            }
+                                        },
+                                        {
+                                            field: 'dutyRole',
+                                            title: '职位',
+                                            width: 100,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                if (d.dutyName) {
+                                                    if (d.dutyRole == 1) return '<span class="layui-badge layui-bg-orange">部长</span>';
+                                                    return '<span class="layui-badge layui-bg-blue">成员</span>';
+                                                }
+                                                return '-';
+                                            }
+                                        },
+                                        {
+                                            title: '操作',
+                                            width: 200,
+                                            align: 'center',
+                                            templet: function (d) {
+                                                return '<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="editMember" style="color: white !important;">编辑</a>' +
+                                                       '<a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="removeFromClub" style="color: white !important; margin-left: 5px;">移出社团</a>';
+                                            }
+                                        }
+                                    ]]
+                                });
+                            }
+                        });
+                    }
+                });
+
+            // 监听成员列表的工具事件
+            table.on('tool(memberList)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'editMember') {
+                    var str = $('#edit_member_box').html();
+                    var editMemberForm = layer.open({
+                        title: "编辑成员信息",
+                        type: 1,
+                        area: ['500px', '550px'],
+                        content: str,
+                        resize: true,
+                        scrollbar: false,
+                        fixed: false,
+                        btn: ['确定', '取消'],
+                        yes: function (index, obj) {
+                            $("#submitMemberForm").click();
+                        },
+                        btn2: function (index, obj) {
+                            layer.close(index);
+                        },
+                        cancel: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                    initMemberForm(editMemberForm, data);
+                }
+                if (obj.event === 'removeFromClub') {
+                    layer.confirm('确定要将该成员移出社团吗？', function (index) {
+                        $.ajax({
+                            type: "POST",
+                            url: '/ClubHub/Member/RemoveFromClub',
+                            data: {id: data.id},
+                            dataType: "json",
+                            success: function (response) {
+                                var isSuccess = (response && (response.Msg || response.msg));
+                                var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                if (isSuccess) {
+                                    layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                    layer.close(index);
+                                    table.reload('memberList');
+                                    // 同时刷新主社团列表，更新人数
+                                    table.reload('List');
+                                } else {
+                                    layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                layer.msg("请求失败：" + (errorThrown || textStatus), {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        });
+                    });
+                }
+            });
+
+            function initMemberForm(formObj, memberData) {
+                $("#member_id").val(memberData.id);
+                $("#member_clubId").val(memberData.clubId);
+                $("#member_studentId").val(memberData.studentId);
+                $("#member_name").val(memberData.name);
+                $("input[name='Sex'][value='" + memberData.sex + "']").prop("checked", true);
+                $("#member_phoneNumber").val(memberData.phoneNumber);
+
+                // 加载部门列表
+                $.get('/ClubHub/Club/GetDutyListByClub', {clubId: memberData.clubId}, function (res) {
+                    var html = '<option value="">无部门</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#member_dutyId").html(html);
+
+                    // 如果有部门，设置选中
+                    if (memberData.dutyMemberId) {
+                        // 需要通过DutyName找到DutyId，这里简化处理
+                        $("#member_dutyId option").each(function () {
+                            if ($(this).text() === memberData.dutyName) {
+                                $(this).prop("selected", true);
+                            }
+                        });
+                        if (memberData.dutyRole !== null && memberData.dutyRole !== undefined) {
+                            $("input[name='DutyRole'][value='" + memberData.dutyRole + "']").prop("checked", true);
+                        }
+                    }
+
+                    form.render();
+                });
+
+                form.on('submit(submitMemberForm)', function (data) {
+                    var postData = {
+                        Id: parseInt(data.field.id) || 0,
+                        Name: data.field.Name || '',
+                        Sex: parseInt(data.field.Sex) || 0,
+                        PhoneNumber: data.field.PhoneNumber || '',
+                        DutyId: data.field.DutyId ? parseInt(data.field.DutyId) : null,
+                        DutyRole: parseInt(data.field.DutyRole) || 0
+                    };
+
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Club/UpdateMember',
+                        data: postData,
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(formObj);
+                                table.reload('memberList');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 3000, shade: 0.08});
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            var errorMsg = "请求失败";
+                            if (XMLHttpRequest.responseText) {
+                                try {
+                                    var errorResponse = JSON.parse(XMLHttpRequest.responseText);
+                                    errorMsg = errorResponse.Message || errorResponse.message || errorMsg;
+                                } catch (e) {
+                                    errorMsg = XMLHttpRequest.responseText.substring(0, 100);
+                                }
+                            }
+                            layer.msg(errorMsg, {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                    return false;
+                });
+                form.render();
+            }
+
+        });
+</script>

@@ -1,0 +1,692 @@
+@{
+    Layout = null;
+}
+
+@*列表页头部*@
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>讨论中心管理</cite></a>
+    </div>
+</div>
+
+<style>
+    .talk-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 200px); /* 调整高度，确保发送按钮可见 */
+        min-height: 400px; /* 最小高度保证基本可用性 */
+        margin: 15px;
+        background: #fff;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+        overflow: hidden; /* 防止内容溢出 */
+    }
+
+    .talk-header {
+        padding: 15px;
+        border-bottom: 1px solid #e6e6e6;
+        background: #f8f8f8;
+        border-radius: 4px 4px 0 0;
+        flex-shrink: 0; /* 防止头部被压缩 */
+    }
+
+    .talk-header h3 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .club-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .club-selector label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .club-selector select {
+        min-width: 200px;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #e6e6e6;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .club-selector select:focus {
+        border-color: #FF5722;
+        outline: none;
+    }
+
+    .talk-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f5f5f5;
+        min-height: 0; /* 允许flex子元素收缩 */
+    }
+
+    .message-item {
+        display: flex;
+        margin-bottom: 15px;
+        align-items: flex-start;
+    }
+
+    .message-item.self {
+        flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #8B0000;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .message-item.self .message-avatar {
+        background: #FF5722;
+    }
+
+    .message-content {
+        max-width: 60%;
+        margin: 0 10px;
+    }
+
+    .message-info {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 5px;
+    }
+
+    .message-item.self .message-info {
+        text-align: right;
+    }
+
+    .message-sender {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .message-identity {
+        display: inline-block;
+        padding: 1px 6px;
+        font-size: 10px;
+        border-radius: 3px;
+        margin-left: 5px;
+        color: #fff;
+    }
+
+    .identity-admin {
+        background: #FF5722;
+    }
+
+    .identity-leader {
+        background: #8B0000;
+    }
+
+    .identity-leader {
+        background: #1E9FFF;
+    }
+
+    .identity-department {
+        background: #5FB878;
+    }
+
+    .identity-member {
+        background: #999;
+    }
+
+    .message-bubble {
+        padding: 10px 15px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+        word-break: break-word;
+        position: relative;
+    }
+
+    .message-item.self .message-bubble {
+        background: #FFE4B5;
+    }
+
+    .message-bubble.deleted {
+        background: #f0f0f0;
+        color: #999;
+        font-style: italic;
+    }
+
+    .message-time {
+        font-size: 11px;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    .message-item.self .message-time {
+        text-align: right;
+    }
+
+    .message-actions {
+        margin-top: 5px;
+    }
+
+    .message-actions .withdraw-btn,
+    .message-actions .delete-btn {
+        font-size: 11px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        margin-right: 10px;
+    }
+
+    .message-actions .withdraw-btn {
+        color: #1E9FFF;
+    }
+
+    .message-actions .delete-btn {
+        color: #FF5722;
+    }
+
+    .message-actions .withdraw-btn:hover,
+    .message-actions .delete-btn:hover {
+        text-decoration: underline;
+    }
+
+    .talk-input {
+        padding: 15px;
+        border-top: 1px solid #e6e6e6;
+        background: #fff;
+        border-radius: 0 0 4px 4px;
+        flex-shrink: 0; /* 防止输入区域被压缩 */
+    }
+
+    .talk-input-wrapper {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .talk-input textarea {
+        flex: 1;
+        resize: none;
+        border: 1px solid #e6e6e6;
+        border-radius: 4px;
+        padding: 10px;
+        font-size: 14px;
+        min-height: 60px;
+        max-height: 120px;
+    }
+
+    .talk-input textarea:focus {
+        border-color: #FF5722;
+        outline: none;
+    }
+
+    .talk-input .send-btn {
+        background: #FF5722;
+        color: #fff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        height: 40px;
+    }
+
+    .talk-input .send-btn:hover {
+        background: #E64A19;
+    }
+
+    .talk-input .send-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #999;
+        padding: 50px;
+    }
+
+    .loading-message {
+        text-align: center;
+        color: #999;
+        padding: 20px;
+    }
+
+    .select-club-hint {
+        text-align: center;
+        color: #999;
+        padding: 50px;
+    }
+
+    .select-club-hint i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+    }
+</style>
+
+<div class="talk-container">
+    <div class="talk-header">
+        <h3><i class="layui-icon layui-icon-dialogue"></i> 讨论中心管理（超级管理员）</h3>
+        <div class="club-selector">
+            <label>选择社团：</label>
+            <select id="clubSelect">
+                <option value="">-- 请选择社团 --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="talk-messages" id="talkMessages">
+        <div class="select-club-hint">
+            <i class="layui-icon layui-icon-dialogue"></i>
+            请先选择一个社团查看讨论消息
+        </div>
+    </div>
+
+    <div class="talk-input" id="talkInputArea" style="display: none;">
+        <div class="talk-input-wrapper">
+            <textarea id="messageInput" placeholder="输入消息内容..." maxlength="500"></textarea>
+            <button class="send-btn" id="sendBtn">发送</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    layui.use(['layer'], function () {
+        var $ = layui.$;
+        var layer = layui.layer;
+        var currentClubId = 0;
+        var connection = null;
+        var isLoading = false;
+        var lastMessageCount = 0;
+
+        // 初始化
+        function init() {
+            loadClubList();
+            bindEvents();
+            initSignalR(); // 初始化SignalR
+        }
+
+        // 初始化SignalR连接
+        function initSignalR() {
+            if (typeof signalR === 'undefined') {
+                console.warn('SignalR库未加载，回退到轮询模式');
+                return;
+            }
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceiveMessage", function (message) {
+                console.log("收到新消息:", message);
+                if (currentClubId > 0) {
+                    loadMessages(true);
+                }
+            });
+
+            connection.onreconnecting(function () {
+                console.log("SignalR正在重连...");
+            });
+
+            connection.onreconnected(function () {
+                console.log("SignalR重连成功");
+                if (currentClubId > 0) {
+                    connection.invoke("JoinClub", currentClubId).catch(function (err) {
+                        console.error("重新加入社团失败:", err);
+                    });
+                }
+            });
+
+            connection.onclose(function () {
+                console.log("SignalR连接已关闭");
+            });
+
+            connection.start()
+                .then(function () {
+                    console.log("SignalR连接成功");
+                })
+                .catch(function (err) {
+                    console.error("SignalR连接失败:", err);
+                });
+        }
+
+        // 加载社团列表
+        function loadClubList() {
+            $.ajax({
+                type: "GET",
+                url: '/ClubHub/SpAdmin/GetClubListForTalk',
+                dataType: "json",
+                success: function (response) {
+                    if (response && response.msg && response.data) {
+                        var html = '<option value="">-- 请选择社团 --</option>';
+                        for (var i = 0; i < response.data.length; i++) {
+                            var club = response.data[i];
+                            html += '<option value="' + club.id + '">' + escapeHtml(club.name) + '</option>';
+                        }
+                        $('#clubSelect').html(html);
+                    } else {
+                        layer.msg(response.message || '加载社团列表失败', {icon: 5, time: 2000});
+                    }
+                },
+                error: function () {
+                    layer.msg('加载社团列表失败', {icon: 5, time: 2000});
+                }
+            });
+        }
+
+        // 加载消息列表
+        function loadMessages(scrollToBottom) {
+            if (isLoading || currentClubId <= 0) return;
+            isLoading = true;
+
+            $.ajax({
+                type: "GET",
+                url: '/ClubHub/SpAdmin/GetTalkList',
+                data: {clubId: currentClubId, page: 1, limit: 100},
+                dataType: "json",
+                success: function (response) {
+                    isLoading = false;
+                    if (response && response.msg) {
+                        renderMessages(response.data || []);
+                        var currentCount = (response.data || []).length;
+                        if (scrollToBottom !== false && (lastMessageCount !== currentCount || scrollToBottom === true)) {
+                            scrollToLatest();
+                        }
+                        lastMessageCount = currentCount;
+                    } else {
+                        $('#talkMessages').html('<div class="empty-message">' + (response.message || '加载失败') + '</div>');
+                    }
+                },
+                error: function () {
+                    isLoading = false;
+                    $('#talkMessages').html('<div class="empty-message">加载失败，请刷新重试</div>');
+                }
+            });
+        }
+
+        // 渲染消息列表
+        function renderMessages(messages) {
+            if (!messages || messages.length === 0) {
+                $('#talkMessages').html('<div class="empty-message">暂无消息，快来发送第一条消息吧！</div>');
+                return;
+            }
+
+            var html = '';
+
+            for (var i = 0; i < messages.length; i++) {
+                var msg = messages[i];
+                var isSelf = msg.isSelf; // 使用后端返回的 isSelf 字段
+                var isDeleted = msg.status === 1;
+
+                html += '<div class="message-item' + (isSelf ? ' self' : '') + '" data-id="' + msg.id + '">';
+
+                // 头像
+                var avatarText = isDeleted ? '?' : (msg.senderName ? msg.senderName.charAt(0) : '?');
+                html += '<div class="message-avatar">' + avatarText + '</div>';
+
+                html += '<div class="message-content">';
+
+                // 发送人信息（已删除消息不显示）
+                if (!isDeleted) {
+                    html += '<div class="message-info">';
+                    html += '<span class="message-sender">' + escapeHtml(msg.senderName || '未知') + '</span>';
+                    html += '<span class="message-identity ' + getIdentityClass(msg.senderIdentity) + '">' + escapeHtml(msg.senderIdentity || '成员') + '</span>';
+                    html += '</div>';
+                }
+
+                // 消息气泡
+                if (isDeleted) {
+                    html += '<div class="message-bubble deleted">已删除</div>';
+                } else {
+                    html += '<div class="message-bubble">' + escapeHtml(msg.content) + '</div>';
+                }
+
+                // 时间和操作
+                html += '<div class="message-time">' + formatTime(msg.sendTime);
+
+                // 操作按钮
+                if (!isDeleted) {
+                    html += ' <span class="message-actions">';
+                    // 撤回按钮（超管自己的消息且60秒内）
+                    if (msg.canWithdraw) {
+                        html += '<button class="withdraw-btn" data-id="' + msg.id + '">撤回</button>';
+                    }
+                    // 删除按钮（所有未删除消息超管都可以删除）
+                    if (msg.canDelete) {
+                        html += '<button class="delete-btn" data-id="' + msg.id + '">删除</button>';
+                    }
+                    html += '</span>';
+                }
+
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            }
+
+            $('#talkMessages').html(html);
+        }
+
+        // 获取身份标签样式类
+        function getIdentityClass(identity) {
+            if (!identity) return 'identity-member';
+            if (identity === '管理员') return 'identity-admin';
+            if (identity === '社长') return 'identity-leader';
+            if (identity.indexOf('部长') > -1) return 'identity-leader';
+            if (identity !== '成员') return 'identity-department';
+            return 'identity-member';
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            var date = new Date(timeStr);
+            var now = new Date();
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            var hours = date.getHours().toString().padStart(2, '0');
+            var minutes = date.getMinutes().toString().padStart(2, '0');
+            var timeOnly = hours + ':' + minutes;
+
+            if (msgDate.getTime() === today.getTime()) {
+                return timeOnly;
+            } else if (msgDate.getTime() === today.getTime() - 86400000) {
+                return '昨天 ' + timeOnly;
+            } else {
+                var month = (date.getMonth() + 1).toString().padStart(2, '0');
+                var day = date.getDate().toString().padStart(2, '0');
+                return month + '-' + day + ' ' + timeOnly;
+            }
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 滚动到最新消息
+        function scrollToLatest() {
+            var container = document.getElementById('talkMessages');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 社团选择变化
+            $('#clubSelect').on('change', function () {
+                var oldClubId = currentClubId;
+                var clubId = parseInt($(this).val()) || 0;
+                currentClubId = clubId;
+                lastMessageCount = 0;
+
+                // 离开旧社团群组
+                if (connection && oldClubId > 0) {
+                    connection.invoke("LeaveClub", oldClubId).catch(function () {});
+                }
+
+                if (clubId > 0) {
+                    $('#talkInputArea').show();
+                    $('#talkMessages').html('<div class="loading-message">加载中...</div>');
+                    loadMessages(true);
+                    // 加入新社团群组
+                    if (connection) {
+                        connection.invoke("JoinClub", clubId).catch(function (err) {
+                            console.error("加入社团失败:", err);
+                        });
+                    }
+                } else {
+                    $('#talkInputArea').hide();
+                    $('#talkMessages').html('<div class="select-club-hint"><i class="layui-icon layui-icon-dialogue"></i>请先选择一个社团查看讨论消息</div>');
+                }
+            });
+
+            // 发送按钮点击
+            $('#sendBtn').on('click', function () {
+                sendMessage();
+            });
+
+            // 回车发送（Shift+Enter换行）
+            $('#messageInput').on('keydown', function (e) {
+                if (e.keyCode === 13 && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // 撤回按钮点击（事件委托）
+            $('#talkMessages').on('click', '.withdraw-btn', function () {
+                var id = $(this).data('id');
+                withdrawMessage(id);
+            });
+
+            // 删除按钮点击（事件委托）
+            $('#talkMessages').on('click', '.delete-btn', function () {
+                var id = $(this).data('id');
+                deleteMessage(id);
+            });
+        }
+
+        // 发送消息
+        function sendMessage() {
+            if (currentClubId <= 0) {
+                layer.msg('请先选择社团', {icon: 5, time: 2000});
+                return;
+            }
+
+            var content = $('#messageInput').val().trim();
+            if (!content) {
+                layer.msg('消息内容不能为空', {icon: 5, time: 2000});
+                return;
+            }
+
+            $('#sendBtn').prop('disabled', true).text('发送中...');
+
+            $.ajax({
+                type: "POST",
+                url: '/ClubHub/SpAdmin/SendTalk',
+                data: {clubId: currentClubId, content: content},
+                dataType: "json",
+                success: function (response) {
+                    $('#sendBtn').prop('disabled', false).text('发送');
+                    if (response && response.msg) {
+                        $('#messageInput').val('').focus();
+                        loadMessages(true);
+                    } else {
+                        layer.msg(response.message || '发送失败', {icon: 5, time: 2000});
+                    }
+                },
+                error: function () {
+                    $('#sendBtn').prop('disabled', false).text('发送');
+                    layer.msg('发送失败，请重试', {icon: 5, time: 2000});
+                }
+            });
+        }
+
+        // 撤回消息（超管自己的消息）
+        function withdrawMessage(id) {
+            layer.confirm('确定要撤回这条消息吗？', {
+                btn: ['确定', '取消']
+            }, function (index) {
+                layer.close(index);
+
+                $.ajax({
+                    type: "POST",
+                    url: '/ClubHub/SpAdmin/WithdrawTalk',
+                    data: {id: id},
+                    dataType: "json",
+                    success: function (response) {
+                        if (response && response.msg) {
+                            layer.msg('撤回成功', {icon: 6, time: 1500});
+                            loadMessages(false);
+                        } else {
+                            layer.msg(response.message || '撤回失败', {icon: 5, time: 2000});
+                        }
+                    },
+                    error: function () {
+                        layer.msg('撤回失败，请重试', {icon: 5, time: 2000});
+                    }
+                });
+            });
+        }
+
+        // 删除消息
+        function deleteMessage(id) {
+            layer.confirm('确定要删除这条消息吗？删除后将显示为"已删除"。', {
+                btn: ['确定', '取消']
+            }, function (index) {
+                layer.close(index);
+
+                $.ajax({
+                    type: "POST",
+                    url: '/ClubHub/SpAdmin/DeleteTalk',
+                    data: {id: id},
+                    dataType: "json",
+                    success: function (response) {
+                        if (response && response.msg) {
+                            layer.msg('删除成功', {icon: 6, time: 1500});
+                            loadMessages(false);
+                        } else {
+                            layer.msg(response.message || '删除失败', {icon: 5, time: 2000});
+                        }
+                    },
+                    error: function () {
+                        layer.msg('删除失败，请重试', {icon: 5, time: 2000});
+                    }
+                });
+            });
+        }
+
+        // 页面卸载时清理
+        $(window).on('beforeunload', function () {
+            if (connection) {
+                if (currentClubId > 0) {
+                    connection.invoke("LeaveClub", currentClubId).catch(function () {});
+                }
+                connection.stop();
+            }
+        });
+
+        // 初始化
+        init();
+    });
+</script>

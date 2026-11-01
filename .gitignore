@@ -1,0 +1,28 @@
+# Build and editor output
+**/bin/
+**/obj/
+**/node_modules/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.log
+TestResults/
+
+# Local configuration and data
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/appsettings.*.local.json
+*.pfx
+*.p12
+*.key
+*.pem
+*.bak
+*.mdf
+*.ldf
+/dbo.sql
+.DS_Store
+Thumbs.db

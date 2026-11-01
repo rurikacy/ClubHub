@@ -1,0 +1,148 @@
+@{
+    Layout = null;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>社团浏览</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        <input class="layui-input" name="clubName" id="clubName" placeholder="请输入社团名称" style="width: 200px; display: inline-block;">
+        <button class="layui-btn" data-type="search">搜索</button>
+        <button class="layui-btn layui-btn-normal" data-type="reload">刷新</button>
+    </div>
+    <div style="float: right; padding-right: 15px;">
+        <span style="color: #999; font-size: 12px;"><i class="layui-icon layui-icon-tips"></i> 游客模式：仅可查看，无法报名或进行其他操作</span>
+    </div>
+</div>
+
+<table class="layui-hide" id="clubList" lay-filter="List"></table>
+
+<script>
+    layui.use(['table', 'form', 'layer'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+
+        // 存储社团数据用于显示详情
+        window.clubsData = {};
+
+        // 格式化日期为 yyyy-MM-dd HH:mm 格式
+        function formatDateTimeMinute(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            var year = date.getFullYear();
+            var month = ('0' + (date.getMonth() + 1)).slice(-2);
+            var day = ('0' + date.getDate()).slice(-2);
+            var hours = ('0' + date.getHours()).slice(-2);
+            var minutes = ('0' + date.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+        }
+
+        function initIndex() {
+            table.render({
+                id: 'List',
+                elem: '#clubList',
+                url: '/ClubHub/Club/GetAll',
+                cols: [[
+                    {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                    {field: 'name', title: '社团名称', width: 200, align: 'center'},
+                    {field: 'description', title: '社团简介', width: 350, align: 'center'},
+                    {field: 'memberCount', title: '成员人数', width: 100, align: 'center'},
+                    {
+                        field: 'enterData', title: '创建时间', width: 160, align: 'center', templet: function (res) {
+                            return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                        }
+                    },
+                    {
+                        title: '操作', width: 120, align: 'center', templet: function (res) {
+                            return '<a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="viewDetail" style="color: white !important;">查看详情</a>';
+                        }
+                    }
+                ]],
+                done: function (res, curr, count) {
+                    $("[data-field='id']").css('display', 'none');
+
+                    // 存储社团数据
+                    if (res.data) {
+                        res.data.forEach(function (club) {
+                            window.clubsData[club.id] = club;
+                        });
+                    }
+                },
+                page: true
+            });
+        }
+
+        initIndex();
+
+        // 监听行工具事件
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'viewDetail') {
+                showClubDetail(data.id);
+            }
+        });
+
+        // 显示社团详情
+        function showClubDetail(clubId) {
+            $.get('/ClubHub/Club/GetById', {id: clubId}, function (res) {
+                if (res) {
+                    var content = '<div style="padding: 20px;">';
+                    content += '<h3 style="margin-bottom: 15px; color: #333;">' + res.name + '</h3>';
+                    content += '<div style="margin-bottom: 15px;">';
+                    content += '<p style="color: #666; line-height: 1.8;">' + (res.description || '暂无简介') + '</p>';
+                    content += '</div>';
+                    content += '<div style="border-top: 1px solid #eee; padding-top: 15px; font-size: 12px; color: #999;">';
+                    content += '<p>创建时间：' + (res.enterData ? new Date(res.enterData).toLocaleString() : '未知') + '</p>';
+                    content += '</div>';
+                    content += '<div style="margin-top: 20px; text-align: center;">';
+                    content += '<span style="color: #999; font-size: 12px;"><i class="layui-icon layui-icon-tips"></i> 登录后可查看更多详情和报名</span>';
+                    content += '</div>';
+                    content += '</div>';
+
+                    layer.open({
+                        type: 1,
+                        title: '社团详情',
+                        area: ['500px', '400px'],
+                        content: content
+                    });
+                } else {
+                    layer.msg('获取社团信息失败', {icon: 5});
+                }
+            });
+        }
+
+        var active = {
+            search: function () {
+                var clubName = $('#clubName').val();
+                table.reload('List', {
+                    where: {
+                        Name: clubName
+                    },
+                    page: {curr: 1}
+                });
+            },
+            reload: function () {
+                $('#clubName').val('');
+                table.reload('List', {
+                    where: {
+                        Name: ''
+                    },
+                    page: {curr: 1}
+                }, 'data');
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>

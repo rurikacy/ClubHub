@@ -1,0 +1,182 @@
+@{
+    Layout = null;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>活动管理</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        活动标题：
+        <div class="layui-inline">
+            <input class="layui-input" name="activeTitle" id="activeTitle" autocomplete="off" placeholder="请输入活动标题">
+        </div>
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="activeList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    {{# if(d.status === 1 || d.statusOrder === 3){ }}
+    <span class="layui-badge" style="background-color: #ff5722;">活动已取消</span>
+    {{# } else if(d.statusOrder === 2){ }}
+    <span class="layui-badge layui-bg-gray">活动已结束</span>
+    {{# } else if(d.statusOrder === 1){ }}
+    <span class="layui-badge layui-bg-gray">活动已开始</span>
+    {{# } else if(d.signType === 0 || d.signType === 2 || d.signType === 3){ }}
+    <!-- 已撤销、已参加或未参加，不显示按钮 -->
+    {{# } else if(d.signType === 1){ }}
+    <a class="layui-btn layui-btn-xs layui-btn-warm" style="color: white;" lay-event="revoke">撤销</a>
+    {{# } else { }}
+    <a class="layui-btn layui-btn-xs" style="background-color: rgb(211, 77, 77); color: white;" lay-event="sign">报名</a>
+    {{# } }}
+</script>
+
+<script>
+    layui.use(['table'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+
+        // 格式化日期为 yyyy-MM-dd HH:mm 格式
+        function formatDateTimeMinute(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            var year = date.getFullYear();
+            var month = ('0' + (date.getMonth() + 1)).slice(-2);
+            var day = ('0' + date.getDate()).slice(-2);
+            var hours = ('0' + date.getHours()).slice(-2);
+            var minutes = ('0' + date.getMinutes()).slice(-2);
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+        }
+
+        table.render({
+            id: 'List',
+            elem: '#activeList',
+            url: '/ClubHub/Active/GetAll',
+            cols: [[
+                {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                {field: 'title', title: '活动标题', width: 200, align: 'center'},
+                {field: 'content', title: '活动内容', width: 300, align: 'center'},
+                {field: 'place', title: '活动地点', width: 150, align: 'center'},
+                {field: 'clubName', title: '发布社团', width: 150, align: 'center'},
+                {
+                    field: 'startTime', title: '开始时间', width: 150, align: 'center', templet: function (res) {
+                        return res.startTime ? formatDateTimeMinute(res.startTime) : '';
+                    }
+                },
+                {
+                    field: 'endTime', title: '结束时间', width: 150, align: 'center', templet: function (res) {
+                        return res.endTime ? formatDateTimeMinute(res.endTime) : '';
+                    }
+                },
+                {
+                    field: 'joinNum', title: '报名人数', width: 150, align: 'center', templet: function (d) {
+                        var minParticipants = d.minParticipants || 0;
+                        var joinNum = d.joinNum || 0;
+                        var html = joinNum;
+                        if (minParticipants > 0) {
+                            var isEnough = joinNum >= minParticipants;
+                            var color = isEnough ? '#009688' : '#ff5722';
+                            var statusText = isEnough ? '✓' : '✗';
+                            html += ' <span style="color: ' + color + '; font-weight: bold;">(' + statusText + ' ' + joinNum + '/' + minParticipants + ')</span>';
+                        }
+                        return html;
+                    }
+                },
+                {
+                    field: 'signType', title: '状态', width: 120, align: 'center', templet: function (d) {
+                        if (d.status === 1) return '<span class="layui-badge" style="background-color: #ff5722;">活动已取消</span>';
+                        if (d.signType === 1) return '<span style="color: green;">已报名</span>';
+                        if (d.signType === 2) return '<span style="color: #009688; font-weight: bold;">已参加</span>';
+                        if (d.signType === 3) return '<span style="color: red;">未参加</span>';
+                        if (d.signType === 0) return '<span style="color: grey;">已撤销</span>';
+                        return '<span style="color: blue;">未报名</span>';
+                    }
+                },
+                {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 150, align: 'center'}
+            ]],
+            done: function () {
+                $("[data-field='id']").css('display', 'none');
+            },
+            page: true
+        });
+
+        var active = {
+            reload: function () {
+                table.reload('List', {
+                    page: {curr: 1},
+                    where: {Title: $('#activeTitle').val()}
+                }, 'data');
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'sign') {
+                layer.confirm('确定要报名参加这个活动吗？', function (index) {
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Active/Sign',
+                        data: {
+                            ActiveId: data.id,
+                            SignType: 1
+                        },
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "报名成功") : "报名失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(index);
+                                table.reload('List', {page: {curr: 1}}, 'data');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                            }
+                        },
+                        error: function () {
+                            layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                });
+            } else if (obj.event === 'revoke') {
+                layer.confirm('确定要撤销报名吗？撤销后将无法再次报名！', function (index) {
+                    $.ajax({
+                        type: "POST",
+                        url: '/ClubHub/Active/Revoke',
+                        data: {
+                            activeId: data.id
+                        },
+                        dataType: "json",
+                        success: function (response) {
+                            var isSuccess = (response && (response.Msg || response.msg));
+                            var message = response ? (response.Message || response.message || "撤销成功") : "撤销失败";
+
+                            if (isSuccess) {
+                                layer.msg(message, {icon: 6, time: 1000, shade: 0.08});
+                                layer.close(index);
+                                table.reload('List', {page: {curr: 1}}, 'data');
+                            } else {
+                                layer.msg(message, {icon: 5, time: 1000, shade: 0.08});
+                            }
+                        },
+                        error: function () {
+                            layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                        }
+                    });
+                });
+            }
+        });
+    });
+</script>

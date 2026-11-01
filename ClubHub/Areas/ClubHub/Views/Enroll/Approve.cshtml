@@ -1,0 +1,379 @@
+@{
+    Layout = null;
+    dynamic isSuperAdmin = ViewBag.IsSuperAdmin ?? false;
+}
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb" style="visibility: visible;padding: 15px;">
+        <a href="/Home/Welcome" data-ajax-update="#LAY_app_body" data-ajax="true">主页</a><span lay-separator="">/</span>
+        <a><cite>报名管理</cite></a>
+    </div>
+</div>
+
+<div class="demoTable" style="padding-left: 15px;">
+    <div style="display: inline-block;">
+        成员姓名：
+        <div class="layui-inline">
+            <input class="layui-input" name="memberName" id="memberName" autocomplete="off" placeholder="请输入成员姓名">
+        </div>
+        审核状态：
+        <div class="layui-inline">
+            <select name="handType" id="handType" class="layui-input" style="width: 150px;">
+                <option value="">全部</option>
+                <option value="null">待审核</option>
+                <option value="0">已批准</option>
+                <option value="1">已退回</option>
+            </select>
+        </div>
+        @if (isSuperAdmin)
+        {
+            <text>
+                申请社团：
+                <div class="layui-inline">
+                    <select name="clubIdFilter" id="clubIdFilter" class="layui-input" style="width: 150px;">
+                        <option value="">全部社团</option>
+                    </select>
+                </div>
+            </text>
+        }
+        <button class="layui-btn" data-type="reload">搜索</button>
+    </div>
+</div>
+
+<table class="layui-hide" id="enrollList" lay-filter="List"></table>
+
+<script type="text/html" id="barDemo">
+    {{# if (d.handType === null || d.handType === undefined) { }}
+    <a class="layui-btn layui-btn-xs" lay-event="approve" style="background-color: #8B0000; color: white;">批准</a>
+    <a class="layui-btn layui-btn-xs" lay-event="reject" style="background-color: #8B0000; color: white;">退回</a>
+    {{# } else if (d.handType === 0) { }}
+    <span class="layui-badge layui-bg-green">已批准</span>
+    {{# } else if (d.handType === 1) { }}
+    <span class="layui-badge layui-bg-gray">已退回</span>
+    {{# } }}
+</script>
+
+<script type="text/template" id="handle_box">
+    <form class="layui-form layui-form-pane" style="padding:10px" lay-filter="handleFormFilter">
+        <input type="text" name="id" id="handle_id" class="layui-input" style="display:none">
+        <input type="text" name="handType" id="handle_handType" class="layui-input" style="display:none">
+        <div class="layui-form-item">
+            <label class="layui-form-label">处理意见</label>
+            <div class="layui-input-block">
+                <textarea name="handInfo" id="handle_handInfo" placeholder="请输入处理意见（选填）" class="layui-textarea" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item" style="display: none;">
+            <button type="submit" class="layui-btn" lay-submit lay-filter="submitHandleForm" id="submitHandleForm">提交</button>
+        </div>
+    </form>
+</script>
+
+<script>
+    layui.use(['table', 'form', 'layer'], function () {
+        var $ = layui.$;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+
+        function initIndex() {
+            table.render({
+                id: 'List',
+                elem: '#enrollList',
+                url: '/ClubHub/Enroll/GetAll',
+                response: {
+                    statusCode: 0,
+                    statusName: 'code',
+                    msgName: 'message',
+                    countName: 'count',
+                    dataName: 'data'
+                },
+                cols: [[
+                    {field: 'id', title: 'ID', width: 80, fixed: 'left', unresize: true, sort: true},
+                    {field: 'memberName', title: '姓名', width: 120, align: 'center'},
+                    {field: 'memberStudentId', title: '学号', width: 150, align: 'center'},
+                    {field: 'memberPhoneNumber', title: '手机号', width: 130, align: 'center'},
+                    {
+                        field: 'memberSex', title: '性别', width: 80, align: 'center', templet: function (res) {
+                            if (res.memberSex === 1) return '男';
+                            if (res.memberSex === 2) return '女';
+                            return '未知';
+                        }
+                    },
+                    @if (isSuperAdmin)
+                    {
+                        <text>{field: 'clubName', title: '申请社团', width: 150, align: 'center'},</text>
+                    }
+                    {
+                        field: 'enterData', title: '申请时间', width: 180, align: 'center', templet: function (res) {
+                            return res.enterData ? new Date(res.enterData).toLocaleString() : '';
+                        }
+                    },
+                    {
+                        field: 'handType', title: '审核状态', width: 120, align: 'center', templet: function (res) {
+                            if (res.handType === null || res.handType === undefined) {
+                                return '<span class="layui-badge layui-bg-orange">待审核</span>';
+                            } else if (res.handType === 0) {
+                                return '<span class="layui-badge layui-bg-green">已批准</span>';
+                            } else if (res.handType === 1) {
+                                return '<span class="layui-badge layui-bg-gray">已退回</span>';
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        field: 'handInfo', title: '处理意见', width: 200, align: 'center', templet: function (res) {
+                            return res.handInfo || '-';
+                        }
+                    },
+                    {
+                        field: 'handDate', title: '处理时间', width: 180, align: 'center', templet: function (res) {
+                            return res.handDate ? new Date(res.handDate).toLocaleString() : '-';
+                        }
+                    },
+                    {fixed: 'right', title: '操作', toolbar: '#barDemo', width: 180, align: 'center'}
+                ]],
+                done: function () {
+                    $("[data-field='id']").css('display', 'none');
+                },
+                page: true
+            });
+        }
+
+        initIndex();
+
+        @if (isSuperAdmin)
+        {
+            <text>
+                // 加载社团列表用于筛选（仅超管）
+                $.get('/ClubHub/Enroll/GetClubListForFilter', function (res) {
+                    var html = '<option value="">全部社团</option>';
+                    if (res && res.length > 0) {
+                        $.each(res, function (i, item) {
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                    }
+                    $("#clubIdFilter").html(html);
+                    form.render('select');
+                });
+            </text>
+        }
+
+        function initHandleForm(formObj, enrollData, handType) {
+            console.log('initHandleForm called with:', enrollData, handType);
+            $("#handle_id").val(enrollData.id);
+            $("#handle_handType").val(handType);
+            $("#handle_handInfo").val('');
+
+            form.on('submit(submitHandleForm)', function (data) {
+                console.log('Form data.field:', data.field);
+                var postData = {
+                    id: parseInt(data.field.id) || 0,
+                    handType: parseInt(data.field.handType) || 0,
+                    handInfo: data.field.handInfo || ''
+                };
+
+                console.log('Submitting handle data:', postData);
+
+                $.ajax({
+                    type: "POST",
+                    url: '/ClubHub/Enroll/Handle',
+                    data: postData,
+                    dataType: "json",
+                    success: function (response) {
+                        var isSuccess = (response && (response.Msg || response.msg));
+                        var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                        if (isSuccess) {
+                            layer.msg(message, {icon: 6, time: 2000, shade: 0.08});
+                            layer.close(formObj);
+                            table.reload('List');
+                        } else {
+                            layer.msg(message, {icon: 5, time: 2000, shade: 0.08});
+                        }
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                    }
+                });
+                return false;
+            });
+
+            form.render();
+        }
+
+        var active = {
+            reload: function () {
+                var handTypeVal = $('#handType').val();
+                var whereData = {
+                    ClubId: '',  // 默认清空ClubId，表示全部社团
+                    HandType: '' // 默认清空HandType，表示全部状态
+                };
+
+                @if (isSuperAdmin)
+                {
+                    <text>
+                        // 超管可以按社团筛选
+                        var clubIdVal = $('#clubIdFilter').val();
+                        if (clubIdVal !== '') {
+                            whereData.ClubId = parseInt(clubIdVal);
+                        }
+                    </text>
+                }
+
+                if (handTypeVal === 'null') {
+                    // 待审核
+                    whereData.HandType = 'null';
+                } else if (handTypeVal !== '') {
+                    // 已批准或已退回
+                    whereData.HandType = parseInt(handTypeVal);
+                }
+                // 如果是空字符串，表示"全部"，不添加HandType参数
+
+                // 使用url参数方式重新加载，确保完全清除之前的筛选条件
+                var urlParams = [];
+                if (whereData.ClubId !== '') {
+                    urlParams.push('ClubId=' + whereData.ClubId);
+                }
+                if (whereData.HandType !== '') {
+                    urlParams.push('HandType=' + whereData.HandType);
+                }
+                var newUrl = '/ClubHub/Enroll/GetAll' + (urlParams.length > 0 ? '?' + urlParams.join('&') : '');
+
+                table.reload('List', {
+                    url: newUrl,
+                    where: {},  // 清空where参数
+                    page: {curr: 1}
+                });
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        // 监听工具条
+        table.on('tool(List)', function (obj) {
+            var data = obj.data;
+
+            if (obj.event === 'approve') {
+                var str = $('#handle_box').html();
+                var handleForm = layer.open({
+                    title: "批准申请",
+                    type: 1,
+                    area: ['500px', '300px'],
+                    content: str,
+                    btn: ['确定', '取消'],
+                    yes: function (index, layero) {
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            var postData = {
+                                id: parseInt($('#handle_id').val()) || 0,
+                                handType: parseInt($('#handle_handType').val()) || 0,
+                                handInfo: $('#handle_handInfo').val() || ''
+                            };
+
+                            $.ajax({
+                                type: "POST",
+                                url: '/ClubHub/Enroll/Handle',
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 2000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 2000, shade: 0.08});
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initHandleForm(handleForm, data, 0); // 0表示批准
+            }
+
+            if (obj.event === 'reject') {
+                var str = $('#handle_box').html();
+                var handleForm = layer.open({
+                    title: "退回申请",
+                    type: 1,
+                    area: ['500px', '300px'],
+                    content: str,
+                    btn: ['确定', '取消'],
+                    yes: function (index, layero) {
+                        layero.find('form').trigger('submit');
+                    },
+                    btn2: function (index) {
+                        layer.close(index);
+                    },
+                    cancel: function (index) {
+                        layer.close(index);
+                    },
+                    success: function(layero, index) {
+                        layero.find('.layui-layer-btn0').css({
+                            'background-color': 'rgb(211, 77, 77)',
+                            'color': 'white',
+                            'border-color': 'rgb(211, 77, 77)'
+                        });
+                        layero.find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            var postData = {
+                                id: parseInt($('#handle_id').val()) || 0,
+                                handType: parseInt($('#handle_handType').val()) || 0,
+                                handInfo: $('#handle_handInfo').val() || ''
+                            };
+
+                            $.ajax({
+                                type: "POST",
+                                url: '/ClubHub/Enroll/Handle',
+                                data: postData,
+                                dataType: "json",
+                                success: function (response) {
+                                    var isSuccess = (response && (response.Msg || response.msg));
+                                    var message = response ? (response.Message || response.message || "操作成功") : "操作失败";
+
+                                    if (isSuccess) {
+                                        layer.msg(message, {icon: 6, time: 2000, shade: 0.08});
+                                        layer.close(index);
+                                        table.reload('List');
+                                    } else {
+                                        layer.msg(message, {icon: 5, time: 2000, shade: 0.08});
+                                    }
+                                },
+                                error: function () {
+                                    layer.msg("请求失败", {icon: 5, time: 3000, shade: 0.08});
+                                }
+                            });
+                            return false;
+                        });
+                    }
+                });
+                initHandleForm(handleForm, data, 1); // 1表示退回
+            }
+        });
+    });
+</script>
