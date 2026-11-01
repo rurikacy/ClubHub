@@ -63,5 +63,3 @@ See [Contributing](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md) a
 ## 📄 License
 
 The existing [LICENSE](LICENSE) is GNU GPL v3.0. Third-party resources and dependencies retain their respective terms; their sources and distribution requirements still need review before release.
-
-The original README credited QinT6o and linked to [GitHub](https://github.com/Qin3Yu) and [Gitee](https://gitee.com/qint6o).

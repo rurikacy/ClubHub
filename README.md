@@ -63,5 +63,3 @@ assets/           项目图标
 ## 📄 许可证
 
 现有 [LICENSE](LICENSE) 为 GNU GPL v3.0。第三方资源及依赖保留各自的许可条款；发布前仍需核对其来源与分发要求。
-
-原 README 署名为 QinT6o，并链接至 [GitHub](https://github.com/Qin3Yu) 和 [Gitee](https://gitee.com/qint6o)。
